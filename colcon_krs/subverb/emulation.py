@@ -141,7 +141,7 @@ class EmulationSubverb(KRSSubverbExtensionPoint):
             file_str += "-net" + "\n"
             file_str += "nic" + "\n"
             file_str += "-net" + "\n"
-            file_str += "user" + "\n"
+            file_str += "user,hostfwd=tcp:127.0.0.1:2222-10.0.2.15:22" + "\n"
             file_str += "-m" + "\n"
             file_str += "4G" + "\n"
             file_str += "-device" + "\n"
@@ -262,6 +262,10 @@ class EmulationSubverb(KRSSubverbExtensionPoint):
             + " "
             + mountpoint
         )
+
+        # # debug
+        # print(cmd)
+
         outs, errs = run(
             cmd, shell=True, timeout=15
         )  # longer timeout, allow user to input password
