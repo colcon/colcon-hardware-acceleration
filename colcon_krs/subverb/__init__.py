@@ -452,3 +452,96 @@ def umount_rawimage(partition=None):
         )
         sys.exit(1)
     green("- Umounted the raw image.")
+
+
+def replace_kernel(kernel_filename):
+    """
+    Mount sd_card disk image in the workspace and replace kernel according
+    to argument kernel_filename.
+
+    NOTE: Refer to get_sdcard_img_dir() function for the location of
+    the file
+    """
+    # # Add a security warning
+    # yellow(
+    #     "SECURITY WARNING: This class invokes explicitly a shell via the "
+    #     "shell=True argument of the Python subprocess library, and uses "
+    #     "admin privileges to manage raw disk images. It is the user's "
+    #     "responsibility to ensure that all whitespace and metacharacters "
+    #     "passed are quoted appropriately to avoid shell injection vulnerabilities."
+    # )
+    firmware_dir = get_firmware_dir()
+
+    # check that target kernel exists
+    kernel_filename_path = firmware_dir + "/kernel/" + kernel_filename
+    if not os.path.exists(kernel_filename_path):
+        red("kernel file " + kernel_filename_path + " not found.")
+        sys.exit(1)
+    green("- Found kernel file " + kernel_filename_path)
+
+    # copy the corresponding kernel file
+    cmd = "sudo cp " + kernel_filename_path + " " + mountpoint1 + "/Image"
+    outs, errs = run(cmd, shell=True, timeout=15)
+    if errs:
+        red(
+            "Something went wrong while replacig the kernel.\n"
+            + "Review the output: "
+            + errs
+        )
+        sys.exit(1)
+    green("- Kernel deployed successfully (" + kernel_filename_path + ").")
+
+
+def add_kernel(kernel_filename):
+    """
+    Mount sd_card disk image in the workspace and add kernel according
+    to argument kernel_filename.
+
+    NOTE: As opposed to replace_kernel(), this function aims to allow
+    adding additional kernel images (e.g. for Xen setups involving VMs
+    with different kernels)
+
+    NOTE 2: Refer to get_sdcard_img_dir() function for the location of
+    the file
+    """
+    # # Add a security warning
+    # yellow(
+    #     "SECURITY WARNING: This class invokes explicitly a shell via the "
+    #     "shell=True argument of the Python subprocess library, and uses "
+    #     "admin privileges to manage raw disk images. It is the user's "
+    #     "responsibility to ensure that all whitespace and metacharacters "
+    #     "passed are quoted appropriately to avoid shell injection vulnerabilities."
+    # )
+    firmware_dir = get_firmware_dir()
+
+    # check that target kernel exists
+    kernel_filename_path = firmware_dir + "/kernel/" + kernel_filename
+    if not os.path.exists(kernel_filename_path):
+        red("kernel file " + kernel_filename_path + " not found.")
+        sys.exit(1)
+    green("- Found kernel file " + kernel_filename_path)
+
+    # copy the corresponding kernel file
+    cmd = "sudo cp " + kernel_filename_path + " " + mountpoint1 + "/" + kernel_filename
+    outs, errs = run(cmd, shell=True, timeout=15)
+    if errs:
+        red(
+            "Something went wrong while replacig the kernel.\n"
+            + "Review the output: "
+            + errs
+        )
+        sys.exit(1)
+    green("- Kernel added successfully (" + kernel_filename_path + ").")
+
+
+def exists(file_path):
+    """
+    Check if file exists
+
+    param file_path: absolute path of the file
+    return: bool
+    """
+    if os.path.exists(file_path):
+        return True
+    else:
+        return False

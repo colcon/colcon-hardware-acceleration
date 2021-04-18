@@ -37,6 +37,7 @@ class KernelSubverb(KRSSubverbExtensionPoint):
         argument = parser.add_argument(
             "type",
             nargs="?",
+            choices=["preempt_rt", "vanilla"],
             help='Kernel type. Use "vanilla" key for a kernel with the default \n'
             'config, or "preempt_rt" key for a fully preemptible (PREEMPT_RT) kernel.',
         )

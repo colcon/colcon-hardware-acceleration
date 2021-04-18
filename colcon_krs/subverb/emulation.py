@@ -383,9 +383,12 @@ class EmulationSubverb(KRSSubverbExtensionPoint):
         yellow("- Launching emulation...")
         # set the path right...
         vitis_dir = get_vitis_dir()
+        firmware_dir = get_firmware_dir()
+        emulation_files_dir = firmware_dir + "/emulation"
+
         cmd = (
             "cd "
-            + vitis_dir
+            + emulation_files_dir
             + " && "
             + vitis_dir
             + "/bin/launch_emulator -device-family ultrascale "
@@ -427,6 +430,8 @@ class EmulationSubverb(KRSSubverbExtensionPoint):
 
         # TODO: describe more pl_sim_dir
         pl_sim_dir = get_firmware_dir() + "/emulation/sim/behav_waveform/xsim"
+        firmware_dir = get_firmware_dir()
+        emulation_files_dir = firmware_dir + "/emulation"
 
         #########################
         # 5. launches emulator
@@ -436,7 +441,7 @@ class EmulationSubverb(KRSSubverbExtensionPoint):
         vitis_dir = get_vitis_dir()
         cmd = (
             "cd "
-            + vitis_dir
+            + emulation_files_dir
             + " && "
             + " PATH=$PATH:"
             + get_vivado_dir()
