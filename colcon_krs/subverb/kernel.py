@@ -204,7 +204,7 @@ class KernelSubverb(KRSSubverbExtensionPoint):
         if context.args.type == "vanilla":
             # mount p1
             rawimage_path = get_rawimage_path("sd_card.img")
-            mount_rawimage(rawimage_path, "p1")
+            mount_rawimage(rawimage_path, 1)
 
             self.replace_kernel("Image")
             self.replace_boot_script()
@@ -212,12 +212,12 @@ class KernelSubverb(KRSSubverbExtensionPoint):
             self.replace_bootbin()
 
             # umount raw disk image, (technically, only p1)
-            umount_rawimage("p1")
+            umount_rawimage(1)
 
         elif context.args.type == "preempt_rt":
             # mount p1
             rawimage_path = get_rawimage_path("sd_card.img")
-            mount_rawimage(rawimage_path, "p1")
+            mount_rawimage(rawimage_path, 1)
 
             self.replace_kernel("Image_PREEMPT_RT")
             self.replace_boot_script()
@@ -225,7 +225,7 @@ class KernelSubverb(KRSSubverbExtensionPoint):
             self.replace_bootbin()
 
             # umount raw disk image, (technically, only p1)
-            umount_rawimage("p1")
+            umount_rawimage(1)
         else:
             print(self.parser.format_usage())
             return "Error: No type provided"

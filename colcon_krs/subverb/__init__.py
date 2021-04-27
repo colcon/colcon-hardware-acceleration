@@ -14,9 +14,13 @@ from colcon_krs.verb import gray, yellow, red, green
 
 logger = colcon_logger.getChild(__name__)
 
+# used by class below as the nth partition as
+# as by external modules to generalize
+mountpointn = "/tmp/sdcard_img_p"
+
+# used by external modules
 mountpoint1 = "/tmp/sdcard_img_p1"
 mountpoint2 = "/tmp/sdcard_img_p2"
-
 
 class KRSSubverbExtensionPoint:
     """
@@ -294,7 +298,7 @@ def run(cmd, shell=False, timeout=1):
     return outs, errs
 
 
-def mount_rawimage(rawimage_path, partition="p1"):
+def mount_rawimage(rawimage_path, partition=1):
     """
     Mounts a disk image as provided by the parameter rawimage_path. Image is
     assumed to have two partitions and both are mounted respectively in
@@ -303,20 +307,23 @@ def mount_rawimage(rawimage_path, partition="p1"):
     param: rawimage_path, the path of the raw disk image obtained by calling
     get_rawimage_path()
 
-    param: partition, partition to mount. Only "p1" or "p2" accepted.
+    param: partition number
 
     return: None
     """
 
-    if partition != "p1" and partition != "p2":
-        red("Partition value not accepted: " + partition)
-        sys.exit(1)
+    # TODO: transform this into a check that "partition" isn't greater
+    # than the number of them in the actual raw image
+    #
+    # if partition != "p1" and partition != "p2":
+    #     red("Partition value not accepted: " + partition)
+    #     sys.exit(1)
 
     if not rawimage_path:
         red(
             "raw image file not found. Consider running "
-            + "this command from the root directory of the workspace and build"
-            + "the workspace first so that Xilinx packages deploy automatically"
+            + "this command from the root directory of the workspace and build "
+            + "the workspace first so that Xilinx packages deploy automatically "
             + "the image."
         )
         sys.exit(1)
@@ -336,37 +343,42 @@ def mount_rawimage(rawimage_path, partition="p1"):
         )
         sys.exit(1)
 
-    # fetch STARTSECTORP1
-    startsectorp1 = None
-    cmd = "fdisk -l " + rawimage_path + " | grep 'img1' | awk '{print $3}'"
-    outs, errs = run(cmd, shell=True)
-    if outs:
-        startsectorp1 = int(outs)
-    if not startsectorp1:
-        red(
-            "Something went wrong while fetching the raw image STARTSECTORP1.\n"
-            + "Review the output: "
-            + outs
-        )
-        sys.exit(1)
+    # NOTE: when p1 is marked as boot in the partition table it needs
+    # to be processed differently:
+    #
+    # # fetch STARTSECTORP1
+    # startsectorp1 = None
+    # cmd = "fdisk -l " + rawimage_path + " | grep 'img1' | awk '{print $3}'"
+    # outs, errs = run(cmd, shell=True)
+    # if outs:
+    #     startsectorp1 = int(outs)
+    # if not startsectorp1:
+    #     red(
+    #         "Something went wrong while fetching the raw image STARTSECTORP1.\n"
+    #         + "Review the output: "
+    #         + outs
+    #     )
+    #     sys.exit(1)
 
     # fetch STARTSECTORP2
-    startsectorp2 = None
-    cmd = "fdisk -l " + rawimage_path + " | grep 'img2' | awk '{print $2}'"
+    startsectorpn = None
+    sectorpn = "img" + str(partition)
+    cmd = "fdisk -l " + rawimage_path + " | grep '"+ sectorpn +"' | awk '{print $2}'"
     outs, errs = run(cmd, shell=True)
     if outs:
-        startsectorp2 = int(outs)
-    if not startsectorp2:
+        startsectorpn = int(outs)
+    if not startsectorpn:
         red(
-            "Something went wrong while fetching the raw image STARTSECTORP2.\n"
+            "Something went wrong while fetching the raw image STARTSECTOR for partition: "+ str(partition) +".\n"
             + "Review the output: "
             + outs
         )
         sys.exit(1)
-    green("- Finished inspecting raw image, obtained UNITS and STARTSECTOR P1/P2")
+    green("- Finished inspecting raw image, obtained UNITS and STARTSECTOR for partition: "+ str(partition) +".")
 
     # create mountpoints
-    cmd = "mkdir -p " + mountpoint2 + " " + mountpoint1
+    mountpointnth = mountpointn + str(partition)
+    cmd = "mkdir -p " + mountpointnth
     outs, errs = run(cmd, shell=True)
     if errs:
         red(
@@ -376,77 +388,46 @@ def mount_rawimage(rawimage_path, partition="p1"):
         )
         sys.exit(1)
 
-    if partition == "p1":
-        # mount p1
-        cmd = (
-            "sudo mount -o loop,offset="
-            + str(units * startsectorp1)
-            + " "
-            + rawimage_path
-            + " "
-            + mountpoint1
+    # mount pnth
+    cmd = (
+        "sudo mount -o loop,offset="
+        + str(units * startsectorpn)
+        + " "
+        + rawimage_path
+        + " "
+        + mountpointnth
+    )
+    outs, errs = run(
+        cmd, shell=True, timeout=10
+    )  # longer timeout, allow user to input password
+    if errs:
+        red(
+            "Something went wrong while mounting partition: "+ str(partition) +".\n"
+            + "Review the output: "
+            + errs
         )
-        outs, errs = run(
-            cmd, shell=True, timeout=15
-        )  # longer timeout, allow user to input password
-        if errs:
-            red(
-                "Something went wrong while mounting p1.\n"
-                + "Review the output: "
-                + errs
-            )
-            sys.exit(1)
-        green("- Image mounted successfully at: " + mountpoint1)
-    else:
-        # mount p2
-        cmd = (
-            "sudo mount -o loop,offset="
-            + str(units * startsectorp2)
-            + " "
-            + rawimage_path
-            + " "
-            + mountpoint2
-        )
-        outs, errs = run(
-            cmd, shell=True, timeout=15
-        )  # longer timeout, allow user to input password
-        if errs:
-            red(
-                "Something went wrong while mounting p2.\n"
-                + "Review the output: "
-                + errs
-            )
-            sys.exit(1)
-        green("- Image mounted successfully at: " + mountpoint2)
+        sys.exit(1)
+    green("- Image mounted successfully at: " + mountpointnth)
 
 
 def umount_rawimage(partition=None):
     """
     Unmounts a disk image. Image paths are assumed to correspond with
-    /tmp/sdcard_img_p1 and /tmp/sdcard_img_p2.
+    /tmp/sdcard_img_p1 and /tmp/sdcard_img_p2, etc.
 
-    param: partition to umount, use "p1" or "p2"
+    param (int): partition to umount
     """
     # syncs and umount both partitions, regardless of what's mounted (oversimplification)
+    toumount = "1 and 2"
     if partition:
-        if partition == "p1":
-            cmd = "sync && sudo umount " + mountpoint1
-        elif partition == "p2":
-            cmd = "sync && sudo umount " + mountpoint2
-        else:
-            red(
-                "Partition passed as an argument: "
-                + partition
-                + " has an invalid value\n."
-                + "Try either 'p1' or 'p2'."
-            )
-            sys.exit(1)
-    else:  # umount both by default
+        cmd = "sync && sudo umount " + mountpointn + str(partition)
+        toumount = str(partition)
+    else:  # umount first and second by default
         cmd = "sync && sudo umount " + mountpoint1 + " && sudo umount " + mountpoint2
     outs, errs = run(cmd, shell=True, timeout=15)
     if errs:
         red(
-            "Something went wrong while umounting the raw image.\n"
+            "Something went wrong while umounting the raw image partitions: " + toumount +".\n"
             + "Review the output: "
             + errs
         )
