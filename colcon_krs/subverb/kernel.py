@@ -16,10 +16,21 @@ from colcon_krs.subverb import (
     umount_rawimage,
     run,
     mountpoint1,
+    exists,    
 )
-from colcon_krs.verb import green, yellow, red
+from colcon_krs.verb import green, yellow, red, gray
 
-
+## No Xen, simple kernel and rootfs-based
+TEMPLATE_CONFIG = """\
+MEMORY_START=0x0
+MEMORY_END=0x80000000
+DEVICE_TREE=system.dtb
+BOOTBIN=BOOT.BIN
+UBOOT_SCRIPT=boot.scr
+DOM0_KERNEL=Image
+DOM0_ROOTFS=rootfs.cpio.gz
+NUM_DOMUS=0
+"""
 class KernelSubverb(KRSSubverbExtensionPoint):
     """
     Configure the Linux kernel type.
@@ -41,6 +52,10 @@ class KernelSubverb(KRSSubverbExtensionPoint):
             help='Kernel type. Use "vanilla" key for a kernel with the default \n'
             'config, or "preempt_rt" key for a fully preemptible (PREEMPT_RT) kernel.',
         )
+
+        # debug arg, show configuration and leave temp. dir (do not delete)
+        argument = parser.add_argument("--debug", action="store_true", default=False)
+
         try:
             from argcomplete.completers import ChoicesCompleter
         except ImportError:
@@ -60,15 +75,6 @@ class KernelSubverb(KRSSubverbExtensionPoint):
         NOTE: Refer to get_sdcard_img_dir() function for the location of
         the file
         """
-        # Add a security warning
-        yellow(
-            "SECURITY WARNING: This class invokes explicitly a shell via the "
-            "shell=True argument of the Python subprocess library, and uses "
-            "admin privileges to manage raw disk images. It is the user's "
-            "responsibility to ensure that all whitespace and metacharacters "
-            "passed are quoted appropriately to avoid shell injection vulnerabilities."
-        )
-
         firmware_dir = get_firmware_dir()
 
         # check that target kernel exists
@@ -201,13 +207,100 @@ class KernelSubverb(KRSSubverbExtensionPoint):
             within the `xilinx_firmware` package. Refer to it for more
             details.
         """
+        # Add a security warning
+        yellow(
+            "SECURITY WARNING: This class invokes explicitly a shell via the "
+            "shell=True argument of the Python subprocess library, and uses "
+            "admin privileges to manage raw disk images. It is the user's "
+            "responsibility to ensure that all whitespace and metacharacters "
+            "passed are quoted appropriately to avoid shell injection vulnerabilities."
+        )
+
+        #####################
+        # re-create image
+        #####################
+        yellow("- Creating a new base image...")
+        # re-using hypervisor tools, create a reference image        
+        auxdir = "/tmp/kernel"
+        run("mkdir " + auxdir, shell=True, timeout=1)
+
+        firmware_dir = get_firmware_dir()  # directory where firmware is
+
+        # save last image, delete rest
+        if exists(firmware_dir + "/sd_card.img.old"):
+            run("sudo rm " + firmware_dir + "/sd_card.img.old", shell=True, timeout=1)        
+            yellow("- Detected previous sd_card.img.old raw image, deleting.")
+        if exists(firmware_dir + "/sd_card.img"):
+            run("sudo mv " + firmware_dir + "/sd_card.img " + firmware_dir 
+                    + "/sd_card.img.old", shell=True, timeout=1)
+            yellow("- Detected previous sd_card.img raw image, moving to sd_card.img.old.")
+
+        # copy vanilla artifacts by default
+        # kernel
+        run("cp " + firmware_dir + "/kernel/Image " + auxdir + "/Image", shell=True, timeout=1)
+        # boot script
+        run("cp " + firmware_dir + "/boot_scripts/boot.scr.sd " + auxdir + "/boot.scr", shell=True, timeout=1)
+        # device tree
+        run("cp " + firmware_dir + "/device_tree/system.dtb.default " + auxdir + "/system.dtb", shell=True, timeout=1)
+        # boot bin
+        run("cp " + firmware_dir + "/bootbin/BOOT.BIN.default " + auxdir + "/BOOT.BIN", shell=True, timeout=1)
+        # rootfs
+        run("cp " + firmware_dir + "/rootfs.cpio.gz " + auxdir + "/rootfs.cpio.gz", shell=True, timeout=1)
+
+        # produce config
+        config = open(auxdir + "/image.cfg", "w")
+        config.truncate(0)  # delete previous content
+        config.write(TEMPLATE_CONFIG)
+        config.close()
+
+        # create sd card image
+        imagebuilder_dir = firmware_dir + "/imagebuilder"
+        whoami, errs = run("whoami", shell=True, timeout=1)
+        if errs:
+            red("Something went wrong while fetching username.\n" + "Review the output: " + errs)
+            sys.exit(1)
+        # build image, add 500 MB of slack on each rootfs-based partition
+        imagebuilder_path_diskimage = imagebuilder_dir + "/scripts/disk_image"
+        cmd = (
+            "cd "
+            + auxdir
+            + " && sudo bash "
+            + imagebuilder_path_diskimage
+            + ' -c image.cfg -d . -t sd -w ' + auxdir
+            + ' -o ' + firmware_dir + '/sd_card.img '
+            + '-s 500'
+        )
+        outs, errs = run(cmd, shell=True)
+        if errs:
+            red("Something went wrong while creating sd card image.\n" + "Review the output: " + errs)
+            sys.exit(1)
+        green("- Image successfully created")
+
+        # permissions of the newly created image
+        cmd = (
+            "sudo chown " + whoami + ":" + whoami + " "
+            + firmware_dir + '/sd_card.img'
+        )
+        outs, errs = run(cmd, shell=True)
+        if errs:
+            red("Something went wrong while creating sd card image.\n" + "Review the output: " + errs)
+            sys.exit(1)
+
+        # cleanup auxdir
+        if not context.args.debug:
+            run("sudo rm -r " + auxdir, shell=True, timeout=1)
+
+        #####################
+        # customize based on args
+        #####################
+        # now adapt image to the arguments passed
         if context.args.type == "vanilla":
             # mount p1
             rawimage_path = get_rawimage_path("sd_card.img")
             mount_rawimage(rawimage_path, 1)
 
             self.replace_kernel("Image")
-            self.replace_boot_script()
+            # self.replace_boot_script()
             self.replace_device_tree()
             self.replace_bootbin()
 
@@ -220,7 +313,7 @@ class KernelSubverb(KRSSubverbExtensionPoint):
             mount_rawimage(rawimage_path, 1)
 
             self.replace_kernel("Image_PREEMPT_RT")
-            self.replace_boot_script()
+            # self.replace_boot_script()
             self.replace_device_tree()
             self.replace_bootbin()
 

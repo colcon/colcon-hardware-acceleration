@@ -44,6 +44,7 @@ TEMPLATE_CONFIG = """\
 MEMORY_START=0x0
 MEMORY_END=0x80000000
 DEVICE_TREE=system.dtb
+BOOTBIN=BOOT.BIN
 XEN=xen
 UBOOT_SOURCE=boot.source
 UBOOT_SCRIPT=boot.scr
@@ -208,9 +209,9 @@ class HypervisorSubverb(KRSSubverbExtensionPoint):
         """
         # ensure ramdisks don't overrun domUs + dom0less
         # NOTE that dom0 doesn't count
-        if context.args.ramdisk_args and (
+        if context.args.ramdisk_args and context.args.domU_args and context.args.dom0less_args and (
             len(context.args.domU_args) + len(context.args.dom0less_args) < len(context.args.ramdisk_args)
-        ):
+        ) or context.args.ramdisk_args and context.args.dom0less_args and (len(context.args.dom0less_args) < len(context.args.ramdisk_args)):
             red(
                 "- More ramdisks provided than VMs. Note that dom0's ramdisk should NOT be indicated (ramdisks <= domUs + dom0less)."
             )
@@ -316,9 +317,11 @@ class HypervisorSubverb(KRSSubverbExtensionPoint):
         and dom0less ramdisks
         """
 
-        if context.args.domU_args and context.args.dom0less_args:
-            red("Simultaneous use of domU and dom0less VMs not supported.")
-            sys.exit(1)
+        # TODO: review in the future
+        #
+        # if context.args.domU_args and context.args.dom0less_args:
+        #     red("Simultaneous use of domU and dom0less VMs not supported.")
+        #     sys.exit(1)
 
         if not (
             context.args.dom0_arg
@@ -329,7 +332,8 @@ class HypervisorSubverb(KRSSubverbExtensionPoint):
             red("Please provide dom0 args at least")
             sys.exit(0)
 
-        num_domus = 0  # NUM_DOMUS element in the configuration
+        num_domus = 0  # NUM_DOMUS element in the configuration, also used for iterate over DomUs
+        num_dom0less = 0  # used to iterate over Dom0less
         global TEMPLATE_CONFIG
         default_ramdisk = "initrd.cpio"
         default_rootfs = "rootfs.cpio.gz"  # note rootfs could be provided in cpio.gz or tar.gz
@@ -481,92 +485,57 @@ class HypervisorSubverb(KRSSubverbExtensionPoint):
                     )
                     num_domus += 1
 
-            # #####################
-            # # process Dom0less
-            # #####################
-            # elif context.args.dom0less_args:                
-            #     # ensure ramdisks don't overrun domUs
-            #     if context.args.ramdisk_args and (
-            #         len(context.args.dom0less_args) < len(context.args.ramdisk_args)
-            #     ):
-            #         red(
-            #             "- More ramdisks provided than VMs. Note that dom0 should not be indicated."
-            #         )
-            #         sys.exit(1)
-            #     # inform if ramdisks is lower than VMs
-            #     if not context.args.ramdisk_args:
-            #         yellow(
-            #             "- No ramdisks provided. Defaulting to " + str(default_ramdisk)
-            #         )
+            #####################
+            # process Dom0less
+            #####################
+            if context.args.dom0less_args:
+                for dom0less in context.args.dom0less_args:
+                    # define ramdisk for this dom0less, or default
+                    if not context.args.ramdisk_args or (
+                        num_dom0less >= len(context.args.ramdisk_args)
+                    ):
+                        ramdisk = default_ramdisk
+                    else:
+                        ramdisk = context.args.ramdisk_args[num_dom0less]
 
-            #     if context.args.ramdisk_args and (
-            #         len(context.args.dom0less_args) > len(context.args.ramdisk_args)
-            #     ):
-            #         yellow(
-            #             "- Number of ramdisks is lower than dom0less VMs. "
-            #             "Last "
-            #             + str(
-            #                 len(context.args.dom0less_args)
-            #                 - len(context.args.ramdisk_args)
-            #             )
-            #             + " VM will default to: "
-            #             + str(default_ramdisk)
-            #         )
-            #     # iterate over each dom0less
-            #     for dom0less in context.args.dom0less_args:
-            #         # define ramdisk for this dom0less, or default
-            #         if not context.args.ramdisk_args or (
-            #             num_domus >= len(context.args.ramdisk_args)
-            #         ):
-            #             ramdisk = default_ramdisk
-            #         else:
-            #             ramdisk = context.args.ramdisk_args[num_domus]
+                    if dom0less == "vanilla":
+                        run(
+                            "cp " + firmware_dir + "/kernel/Image " + auxdir + "/Image",
+                            shell=True,
+                            timeout=1,
+                        )
+                        TEMPLATE_CONFIG += (
+                            "DOMU_KERNEL[" + str(num_dom0less + num_domus) + ']="Image"\n'
+                        )
+                    elif dom0less == "preempt_rt":
+                        # add_kernel("Image_PREEMPT_RT")
+                        run(
+                            "cp "
+                            + firmware_dir
+                            + "/kernel/Image_PREEMPT_RT "
+                            + auxdir
+                            + "/Image_PREEMPT_RT",
+                            shell=True,
+                            timeout=1,
+                        )
+                        TEMPLATE_CONFIG += (
+                            "DOMU_KERNEL[" + str(num_dom0less  + num_domus) + ']="Image_PREEMPT_RT"\n'
+                        )
+                    else:
+                        red("Unrecognized dom0less arg.")
+                        sys.exit(1)
+                    
+                    TEMPLATE_CONFIG += (
+                        "DOMU_RAMDISK["
+                        + str(num_dom0less  + num_domus)
+                        + ']="'
+                        + str(ramdisk)
+                        + '"\n'
+                    )
+                    num_dom0less += 1
 
-            #         if dom0less == "vanilla":
-            #             # add_kernel("Image")
-
-            #             run(
-            #                 "cp " + firmware_dir + "/kernel/Image " + auxdir + "/Image",
-            #                 shell=True,
-            #                 timeout=1,
-            #             )
-
-            #             TEMPLATE_CONFIG += (
-            #                 "DOMU_KERNEL[" + str(num_domus) + ']="Image"\n'
-            #             )
-            #             TEMPLATE_CONFIG += (
-            #                 "DOMU_RAMDISK["
-            #                 + str(num_domus)
-            #                 + ']="'
-            #                 + str(ramdisk)
-            #                 + '"\n'
-            #             )
-            #         elif dom0less == "preempt_rt":
-            #             # add_kernel("Image_PREEMPT_RT")
-            #             run(
-            #                 "cp "
-            #                 + firmware_dir
-            #                 + "/kernel/Image_PREEMPT_RT "
-            #                 + auxdir
-            #                 + "/Image_PREEMPT_RT",
-            #                 shell=True,
-            #                 timeout=1,
-            #             )
-
-            #             TEMPLATE_CONFIG += (
-            #                 "DOMU_KERNEL[" + str(num_domus) + ']="Image_PREEMPT_RT"\n'
-            #             )
-            #             TEMPLATE_CONFIG += (
-            #                 "DOMU_RAMDISK["
-            #                 + str(num_domus)
-            #                 + ']="'
-            #                 + str(ramdisk)
-            #                 + '"\n'
-            #             )
-            #         else:
-            #             red("Unrecognized dom0less arg.")
-            #             sys.exit(1)
-            #         num_domus += 1
+            # account for Dom0less in the total as well
+            num_domus += num_dom0less
 
             #####################
             # configuration and images
@@ -672,7 +641,7 @@ class HypervisorSubverb(KRSSubverbExtensionPoint):
             green("- Boot script ready")
 
             # create sd card image
-            yellow("- Creating new sd_card.img, previous one will be moved to sd_card.img.old")
+            yellow("- Creating new sd_card.img, previous one will be moved to sd_card.img.old. This will take a few seconds, hold on...")
             whoami, errs = run("whoami", shell=True, timeout=1)
             if errs:
                 red("Something went wrong while fetching username.\n" + "Review the output: " + errs)
@@ -733,8 +702,9 @@ class HypervisorSubverb(KRSSubverbExtensionPoint):
             self.xen_fixes(partition=2)
 
             # apply fixes also to every domU
-            for i in len(context.args.domU_args):
-                print(i + 2)
+            if context.args.domU_args:
+                for i in range(len(context.args.domU_args)):
+                    self.xen_fixes(partition= i + 2 + 1)
 
             # cleanup auxdir
             if not context.args.debug:
