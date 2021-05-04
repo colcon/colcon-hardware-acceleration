@@ -22,6 +22,7 @@ mountpointn = "/tmp/sdcard_img_p"
 mountpoint1 = "/tmp/sdcard_img_p1"
 mountpoint2 = "/tmp/sdcard_img_p2"
 
+
 class KRSSubverbExtensionPoint:
     """
     The interface for vitis subverb extensions.
@@ -363,20 +364,26 @@ def mount_rawimage(rawimage_path, partition=1):
     # fetch STARTSECTORP2
     startsectorpn = None
     sectorpn = "img" + str(partition)
-    cmd = "fdisk -l " + rawimage_path + " | grep '"+ sectorpn +"' | awk '{print $2}'"
+    cmd = "fdisk -l " + rawimage_path + " | grep '" + sectorpn + "' | awk '{print $2}'"
     outs, errs = run(cmd, shell=True)
     if outs:
         startsectorpn = int(outs)
     if not startsectorpn:
         red(
-            "Something went wrong while fetching the raw image STARTSECTOR for partition: "+ str(partition) +".\n"
+            "Something went wrong while fetching the raw image STARTSECTOR for partition: "
+            + str(partition)
+            + ".\n"
             + "Review the output: "
             + outs
         )
         sys.exit(1)
-    green("- Finished inspecting raw image, obtained UNITS and STARTSECTOR for partition: "+ str(partition) +".")
+    green(
+        "- Finished inspecting raw image, obtained UNITS and STARTSECTOR for partition: "
+        + str(partition)
+        + "."
+    )
 
-    # create mountpoints
+    # create mountpoint
     mountpointnth = mountpointn + str(partition)
     cmd = "mkdir -p " + mountpointnth
     outs, errs = run(cmd, shell=True)
@@ -402,12 +409,16 @@ def mount_rawimage(rawimage_path, partition=1):
     )  # longer timeout, allow user to input password
     if errs:
         red(
-            "Something went wrong while mounting partition: "+ str(partition) +".\n"
+            "Something went wrong while mounting partition: "
+            + str(partition)
+            + ".\n"
             + "Review the output: "
             + errs
         )
         sys.exit(1)
     green("- Image mounted successfully at: " + mountpointnth)
+
+    return mountpointnth
 
 
 def umount_rawimage(partition=None):
@@ -427,7 +438,9 @@ def umount_rawimage(partition=None):
     outs, errs = run(cmd, shell=True, timeout=15)
     if errs:
         red(
-            "Something went wrong while umounting the raw image partitions: " + toumount +".\n"
+            "Something went wrong while umounting the raw image partitions: "
+            + toumount
+            + ".\n"
             + "Review the output: "
             + errs
         )

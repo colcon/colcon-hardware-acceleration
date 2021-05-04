@@ -239,6 +239,8 @@ class EmulationSubverb(KRSSubverbExtensionPoint):
                 "Something went wrong while fetching the raw image STARTSECTORP2.\n"
                 + "Review the output: "
                 + outs
+                if outs
+                else "None"
             )
             sys.exit(1)
         green("- Finished inspecting raw image, obtained UNITS and STARTSECTOR P1/P2")
