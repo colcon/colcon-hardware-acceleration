@@ -10,7 +10,7 @@ from colcon_krs import __version__
 
 
 class VersionSubverb(KRSSubverbExtensionPoint):
-    """Report version of the different KRS sub-components."""
+    """Report version of the tool."""
 
     def __init__(self):  # noqa: D107
         super().__init__()
