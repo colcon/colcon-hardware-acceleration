@@ -344,27 +344,32 @@ def mount_rawimage(rawimage_path, partition=1):
         )
         sys.exit(1)
 
-    # NOTE: when p1 is marked as boot in the partition table it needs
-    # to be processed differently:
-    #
-    # # fetch STARTSECTORP1
-    # startsectorp1 = None
-    # cmd = "fdisk -l " + rawimage_path + " | grep 'img1' | awk '{print $3}'"
-    # outs, errs = run(cmd, shell=True)
-    # if outs:
-    #     startsectorp1 = int(outs)
-    # if not startsectorp1:
-    #     red(
-    #         "Something went wrong while fetching the raw image STARTSECTORP1.\n"
-    #         + "Review the output: "
-    #         + outs
-    #     )
-    #     sys.exit(1)
-
-    # fetch STARTSECTORP2
+    # fetch STARTSECTORPn
     startsectorpn = None
     sectorpn = "img" + str(partition)
-    cmd = "fdisk -l " + rawimage_path + " | grep '" + sectorpn + "' | awk '{print $2}'"
+
+    # partitions will look like:
+    #
+    # Device       Boot   Start     End Sectors  Size Id Type
+    # sd_card.img1 *       2048 1148927 1146880  560M  c W95 FAT32 (LBA)
+    # sd_card.img2      1148928 6703103 5554176  2.7G 83 Linux
+
+    if partition == 1:
+        cmd = (
+            "fdisk -l "
+            + rawimage_path
+            + " | grep '"
+            + sectorpn
+            + "' | awk '{print $3}'"
+        )
+    else:
+        cmd = (
+            "fdisk -l "
+            + rawimage_path
+            + " | grep '"
+            + sectorpn
+            + "' | awk '{print $2}'"
+        )
     outs, errs = run(cmd, shell=True)
     if outs:
         startsectorpn = int(outs)
