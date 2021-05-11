@@ -315,7 +315,7 @@ class HypervisorSubverb(KRSSubverbExtensionPoint):
         TODO: ramdisk selection is currently not implemented.
 
         NOTE: Location, syntax and other related matters are defined
-            within the `xilinx_firmware` package. Refer to it for more
+            within the `acceleration_firmware_xilinx` package. Refer to it for more
             details.
 
         NOTE 2: to simplify implementation, for now, domUs will use rootfs
@@ -353,10 +353,15 @@ class HypervisorSubverb(KRSSubverbExtensionPoint):
         firmware_dir = get_firmware_dir()  # directory where firmware is
 
         # save last image, delete rest
-        if exists(firmware_dir + "/sd_card.img.old"):
-            run("sudo rm " + firmware_dir + "/sd_card.img.old", shell=True, timeout=1)
-            yellow("- Detected previous sd_card.img.old raw image, deleting.")
         if exists(firmware_dir + "/sd_card.img"):
+            if exists(firmware_dir + "/sd_card.img.old"):
+                run(
+                    "sudo rm " + firmware_dir + "/sd_card.img.old",
+                    shell=True,
+                    timeout=1,
+                )
+                yellow("- Detected previous sd_card.img.old raw image, deleting.")
+
             run(
                 "sudo mv "
                 + firmware_dir

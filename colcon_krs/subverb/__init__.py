@@ -179,7 +179,7 @@ def get_firmware_dir():
     :rtype: String
     """
     current_dir = os.environ.get("PWD", "")
-    firmware_dir = current_dir + "/xilinx/firmware"
+    firmware_dir = current_dir + "/acceleration/firmware/xilinx"
     if os.path.exists(firmware_dir):
         return firmware_dir
     else:
@@ -195,7 +195,7 @@ def get_firmware_dir():
 def get_platform_dir():
     """
     Get the path to the Xilinx hardware platform deployed software. Usually
-    lives within "<ros2_ws>/xilinx/firmware/platform".
+    lives within "<ros2_ws>/acceleration/firmware/xilinx/platform".
 
     NOTE: platform is board-specific. Consult the README and/or change
     branch as per your hardware/board requirements.
@@ -203,7 +203,7 @@ def get_platform_dir():
     :rtype: String
     """
     current_dir = os.environ.get("PWD", "")
-    platform_dir = current_dir + "/xilinx/firmware/platform"
+    platform_dir = current_dir + "/acceleration/firmware/xilinx/platform"
     if os.path.exists(platform_dir):
         return platform_dir
     else:
@@ -255,7 +255,7 @@ def get_rawimage_path(rawimage_filename="sd_card.img"):
     firmware directory if exists, None otherwise.
 
     Image is meant for both hardware and emulation. It usually lives in
-    "<ros2_ws>/xilinx/firmware/sd_card.img".
+    "<ros2_ws>/acceleration/firmware/xilinx/sd_card.img".
 
     :rtype: String
     """
@@ -299,7 +299,7 @@ def run(cmd, shell=False, timeout=1):
     return outs, errs
 
 
-def mount_rawimage(rawimage_path, partition=1):
+def mount_rawimage(rawimage_path, partition=1, debug=False):
     """
     Mounts a disk image as provided by the parameter rawimage_path. Image is
     assumed to have two partitions and both are mounted respectively in
@@ -370,9 +370,16 @@ def mount_rawimage(rawimage_path, partition=1):
             + sectorpn
             + "' | awk '{print $2}'"
         )
+
+    if debug:
+        print(cmd)
+
     outs, errs = run(cmd, shell=True)
     if outs:
         startsectorpn = int(outs)
+        if debug:
+            print("startsectorpn: " + str(startsectorpn))
+
     if not startsectorpn:
         red(
             "Something went wrong while fetching the raw image STARTSECTOR for partition: "
@@ -409,6 +416,10 @@ def mount_rawimage(rawimage_path, partition=1):
         + " "
         + mountpointnth
     )
+
+    if debug:
+        print(cmd)
+
     outs, errs = run(
         cmd, shell=True, timeout=10
     )  # longer timeout, allow user to input password

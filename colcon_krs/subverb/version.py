@@ -34,7 +34,7 @@ class VersionSubverb(KRSSubverbExtensionPoint):
         """Version of Vitis being used.
 
         NOTE: Location, syntax and other related matters are defined
-            within the `xilinx_firmware` package. Refer to it for more
+            within the `acceleration_firmware_xilinx` package. Refer to it for more
             details.
         """
         if not context.args.component:  # defaults to this package's version

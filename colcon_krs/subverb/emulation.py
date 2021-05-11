@@ -427,7 +427,7 @@ class EmulationSubverb(KRSSubverbExtensionPoint):
         # Add a second warning indicating that ONLY ONE kernel can be emulated every time
         yellow(
             "WARNING: Only one kernel can be emulated. Such kernel's package/sim directory should be symlinked"
-            " into xilinx/firmware/emulation/sim directory."
+            " into acceleration/firmware/xilinx/emulation/sim directory."
         )
 
         # TODO: describe more pl_sim_dir

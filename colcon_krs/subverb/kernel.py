@@ -213,7 +213,7 @@ class KernelSubverb(KRSSubverbExtensionPoint):
         in the image.
 
         NOTE: Location, syntax and other related matters are defined
-            within the `xilinx_firmware` package. Refer to it for more
+            within the `acceleration_firmware_xilinx` package. Refer to it for more
             details.
         """
         # Add a security warning
@@ -254,10 +254,15 @@ class KernelSubverb(KRSSubverbExtensionPoint):
         run("mkdir " + auxdir, shell=True, timeout=1)
 
         # save last image, delete rest
-        if exists(firmware_dir + "/sd_card.img.old"):
-            run("sudo rm " + firmware_dir + "/sd_card.img.old", shell=True, timeout=1)
-            yellow("- Detected previous sd_card.img.old raw image, deleting.")
         if exists(firmware_dir + "/sd_card.img"):
+            if exists(firmware_dir + "/sd_card.img.old"):
+                run(
+                    "sudo rm " + firmware_dir + "/sd_card.img.old",
+                    shell=True,
+                    timeout=1,
+                )
+                yellow("- Detected previous sd_card.img.old raw image, deleting.")
+
             run(
                 "sudo mv "
                 + firmware_dir
