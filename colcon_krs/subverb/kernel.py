@@ -5,6 +5,8 @@
 
 import os
 import sys
+import errno
+from pathlib import Path
 
 from colcon_core.plugin_system import satisfies_version
 from colcon_krs.subverb import (
@@ -17,8 +19,10 @@ from colcon_krs.subverb import (
     run,
     mountpoint1,
     exists,
+    copy_ros2_workspace,
 )
 from colcon_krs.verb import green, yellow, red, gray
+
 
 ## No Xen, simple kernel and rootfs-based
 TEMPLATE_CONFIG = """\
@@ -64,6 +68,13 @@ class KernelSubverb(KRSSubverbExtensionPoint):
 
         # debug arg, show configuration and leave temp. dir (do not delete)
         argument = parser.add_argument("--debug", action="store_true", default=False)
+
+        argument = parser.add_argument(
+            "--install-dir",
+            dest="install_dir",
+            type=str,
+            help="relative path to the workspace directory to deploy in emulation (typically 'install-*').",
+        )
 
         try:
             from argcomplete.completers import ChoicesCompleter
@@ -172,7 +183,11 @@ class KernelSubverb(KRSSubverbExtensionPoint):
         green("- Device tree deployed successfully (" + device_tree_path + ").")
 
     def replace_bootbin(self, bootbin_file="BOOT.BIN.default"):
-        """Replace BOOT.BIN file"""
+        """
+        Replace BOOT.BIN file
+
+        Checks if symlink exists
+        """
         # # Add a security warning
         # yellow(
         #     "SECURITY WARNING: This class invokes explicitly a shell via the "
@@ -182,31 +197,69 @@ class KernelSubverb(KRSSubverbExtensionPoint):
         #     "passed are quoted appropriately to avoid shell injection vulnerabilities."
         # )
         firmware_dir = get_firmware_dir()
+        symlink_path = Path(firmware_dir + "/BOOT.BIN")
 
-        # check that target device bootbin_file
-        device_bootbin_file_path = firmware_dir + "/bootbin/" + bootbin_file
-        if not os.path.exists(device_bootbin_file_path):
-            red("BOOT.BIN file " + device_bootbin_file_path + " not found.")
-            sys.exit(1)
-        green("- Found device BOOT.BIN file: " + device_bootbin_file_path)
+        # use symlink if exists and valid, else use default
+        if symlink_path.is_symlink():
+            try:
+                os.stat(symlink_path)
+            except OSError as e:
+                if e.errno == errno.ENOENT:
+                    print(
+                        "path %s does not exist or is a broken symlink" % symlink_path
+                    )
+                    sys.exit(1)
+                else:
+                    raise e
 
-        # copy the corresponding file
-        # NOTE: this will overwrite previous script
-        # TODO: backup previous script if exists
-        cmd = "sudo cp " + device_bootbin_file_path + " " + mountpoint1 + "/BOOT.BIN"
-        outs, errs = run(cmd, shell=True, timeout=5)
-        if errs:
-            red(
-                "Something went wrong while replacing the device bootbin_file.\n"
-                + "Review the output: "
-                + errs
+            if not os.path.exists(symlink_path):
+                red("BOOT.BIN file " + symlink_path + " not found.")
+                sys.exit(1)
+            green("- Found device BOOT.BIN file: " + str(symlink_path))
+
+            # copy the corresponding file
+            # NOTE: this will overwrite previous script
+            # TODO: backup previous script if exists
+            cmd = "sudo cp " + str(symlink_path) + " " + mountpoint1 + "/BOOT.BIN"
+            outs, errs = run(cmd, shell=True, timeout=5)
+            if errs:
+                red(
+                    "Something went wrong while replacing the device bootbin_file.\n"
+                    + "Review the output: "
+                    + errs
+                )
+                sys.exit(1)
+            green(
+                "- Device BOOT.BIN deployed successfully (" + str(symlink_path) + ")."
             )
-            sys.exit(1)
-        green(
-            "- Device BOOT.BIN deployed successfully ("
-            + device_bootbin_file_path
-            + ")."
-        )
+
+        else:
+            # check that target device bootbin_file
+            device_bootbin_file_path = firmware_dir + "/bootbin/" + bootbin_file
+            if not os.path.exists(device_bootbin_file_path):
+                red("BOOT.BIN file " + device_bootbin_file_path + " not found.")
+                sys.exit(1)
+            green("- Found device BOOT.BIN file: " + device_bootbin_file_path)
+
+            # copy the corresponding file
+            # NOTE: this will overwrite previous script
+            # TODO: backup previous script if exists
+            cmd = (
+                "sudo cp " + device_bootbin_file_path + " " + mountpoint1 + "/BOOT.BIN"
+            )
+            outs, errs = run(cmd, shell=True, timeout=5)
+            if errs:
+                red(
+                    "Something went wrong while replacing the device bootbin_file.\n"
+                    + "Review the output: "
+                    + errs
+                )
+                sys.exit(1)
+            green(
+                "- Device BOOT.BIN deployed successfully ("
+                + device_bootbin_file_path
+                + ")."
+            )
 
     def main(self, *, context):  # noqa: D102
         """Pick the corresponding kernel and configure it appropriately
@@ -401,3 +454,9 @@ class KernelSubverb(KRSSubverbExtensionPoint):
         else:
             print(self.parser.format_usage())
             return "Error: No type provided"
+
+        #####################
+        # copy workspace to image
+        #####################
+        if context.args.install_dir:
+            copy_ros2_workspace(context.args.install_dir)

@@ -235,14 +235,17 @@ def get_install_dir(install_dir_input="install"):
         )
 
 
-def check_install_directory():
+def check_install_directory(installdir=None):
     """
     Check if the install directory exits in the root of the current workspace.
 
     :rtype: Bool
     """
     current_dir = os.environ.get("PWD", "")
-    install_dir = current_dir + "/install"
+    if installdir:
+        install_dir = current_dir + "/" + installdir
+    else:
+        install_dir = current_dir + "/install"
     if os.path.exists(install_dir):
         return True
     else:
@@ -555,3 +558,189 @@ def exists(file_path):
         return True
     else:
         return False
+
+
+def copy_ros2_workspace(install_dir):  # noqa: D102
+    """
+    Prepare the emulation
+
+    param: context: superclass context containing arguments, etc.
+    return: emulation_file_qemu, emulation_file_pmu, rawimage_path
+    """
+
+    # Add a security warning
+    # yellow(
+    #     "SECURITY WARNING: This class invokes explicitly a shell via the shell=True argument of the Python"
+    #     " subprocess library, and uses admin privileges to manage raw disk images. It is the user's "
+    #     "responsibility to ensure that all whitespace and metacharacters passed are quoted appropriately"
+    #     " to avoid shell injection vulnerabilities."
+    # )
+
+    #########################
+    # 1. verifies that the `<workspace>/"install_dir"/` directory exists in the workspace.
+    #########################
+    if not check_install_directory(install_dir):
+        red(
+            "workspace "
+            + install_dir
+            + " directory not found. Consider running "
+            + "this command from the root directory of the workspace and build"
+            + "the workspace first"
+        )
+        sys.exit(1)
+    green("- Verified that install/ is available in the current ROS 2 workspace")
+
+    #########################
+    # 2. mounts the embedded raw image ("sd_card.img" file) available in deployed firmware
+    #     and deploys the `<workspace>/install/` directory under "/ros2_ws" in the rootfs.
+    #########################
+    rawimage_path = get_rawimage_path()
+    if not rawimage_path:
+        red(
+            "raw image file not found. Consider running "
+            + "this command from the root directory of the workspace and build"
+            + "the workspace first so that Xilinx packages deploy automatically"
+            + "the image."
+        )
+        sys.exit(1)
+    green("- Confirmed availability of raw image file at: " + rawimage_path)
+
+    # fetch UNITS
+    units = None
+    cmd = "fdisk -l " + rawimage_path + " | grep 'Units' | awk '{print $8}'"
+    outs, errs = run(cmd, shell=True)
+    if outs:
+        units = int(outs)
+    if not units:
+        red(
+            "Something went wrong while fetching the raw image UNITS.\n"
+            + "Review the output: "
+            + outs
+        )
+        sys.exit(1)
+
+    # fetch STARTSECTORP1
+    startsectorp1 = None
+    cmd = "fdisk -l " + rawimage_path + " | grep 'img1' | awk '{print $3}'"
+    outs, errs = run(cmd, shell=True)
+    if outs:
+        startsectorp1 = int(outs)
+    if not startsectorp1:
+        red(
+            "Something went wrong while fetching the raw image STARTSECTORP1.\n"
+            + "Review the output: "
+            + outs
+        )
+        sys.exit(1)
+
+    # fetch STARTSECTORP2
+    startsectorp2 = None
+    cmd = "fdisk -l " + rawimage_path + " | grep 'img2' | awk '{print $2}'"
+    outs, errs = run(cmd, shell=True)
+    if outs:
+        startsectorp2 = int(outs)
+    if not startsectorp2:
+        red(
+            "Something went wrong while fetching the raw image STARTSECTORP2.\n"
+            + "Review the output: "
+            + outs
+            if outs
+            else "None"
+        )
+        sys.exit(1)
+    green("- Finished inspecting raw image, obtained UNITS and STARTSECTOR P1/P2")
+
+    # define mountpoint and mount
+    mountpoint = "/tmp/sdcard_img_p2"
+    cmd = "mkdir -p " + mountpoint
+    outs, errs = run(cmd, shell=True)
+    if errs:
+        red(
+            "Something went wrong while setting MOUNTPOINT.\n"
+            + "Review the output: "
+            + errs
+        )
+        sys.exit(1)
+    cmd = (
+        "sudo mount -o loop,offset="
+        + str(units * startsectorp2)
+        + " "
+        + rawimage_path
+        + " "
+        + mountpoint
+    )
+
+    # # debug
+    # print(cmd)
+
+    outs, errs = run(
+        cmd, shell=True, timeout=15
+    )  # longer timeout, allow user to input password
+    if errs:
+        red("Something went wrong while mounting.\n" + "Review the output: " + errs)
+        sys.exit(1)
+    green("- Image mounted successfully at: " + mountpoint)
+
+    # remove prior overlay ROS 2 workspace files at "/ros2_ws",
+    #  and copy the <ws>/install directory as such
+    if os.path.exists(mountpoint + "/ros2_ws"):
+        cmd = "sudo rm -r " + mountpoint + "/ros2_ws/*"
+        outs, errs = run(cmd, shell=True)
+        if errs:
+            red(
+                "Something went wrong while removing image workspace.\n"
+                + "Review the output: "
+                + errs
+            )
+            sys.exit(1)
+        green(
+            "- Successfully cleaned up prior overlay ROS 2 workspace "
+            + "at: "
+            + mountpoint
+            + "/ros2_ws"
+        )
+    else:
+        yellow(
+            "No prior overlay ROS 2 workspace found "
+            + "at: "
+            + mountpoint
+            + "/ros2_ws, creating it."
+        )
+        cmd = "sudo mkdir " + mountpoint + "/ros2_ws"
+        outs, errs = run(cmd, shell=True)
+        if errs:
+            red(
+                "Something went wrong while creating overlay ROS 2 workspace.\n"
+                + "Review the output: "
+                + errs
+            )
+            sys.exit(1)
+
+    cmd = "sudo cp -r " + install_dir + "/* " + mountpoint + "/ros2_ws"
+    outs, errs = run(cmd, shell=True)
+    if errs:
+        red(
+            "Something went wrong while copying overlay ROS 2 workspace to mountpoint.\n"
+            + "Review the output: "
+            + errs
+        )
+        sys.exit(1)
+    green(
+        "- Copied '"
+        + install_dir
+        + "' directory as a ROS 2 overlay workspace in the raw image."
+    )
+
+    #########################
+    # 3. syncs and umount the raw image
+    #########################
+    cmd = "sync && sudo umount " + mountpoint
+    outs, errs = run(cmd, shell=True, timeout=15)
+    if errs:
+        red(
+            "Something went wrong while umounting the raw image.\n"
+            + "Review the output: "
+            + errs
+        )
+        sys.exit(1)
+    green("- Umounted the raw image.")
