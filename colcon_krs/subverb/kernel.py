@@ -1,7 +1,13 @@
-# Copyright (c) 2021, Xilinx®
-# All rights reserved
+#    ____  ____
+#   /   /\/   /
+#  /___/  \  /   Copyright (c) 2021, Xilinx®.
+#  \   \   \/    Author: Víctor Mayoral Vilches <victorma@xilinx.com>
+#   \   \
+#   /   /
+#  /___/   /\
+#  \   \  /  \
+#   \___\/\___\
 #
-# Author: Víctor Mayoral Vilches <victorma@xilinx.com>
 
 import os
 import sys
@@ -181,6 +187,32 @@ class KernelSubverb(KRSSubverbExtensionPoint):
             )
             sys.exit(1)
         green("- Device tree deployed successfully (" + device_tree_path + ").")
+
+    def add_file(self, file):
+        """
+        Generic function to add desired file to the boot partition of the image
+        from the firmware directory
+        """
+        firmware_dir = get_firmware_dir()
+
+        # check that target device tree
+        file_path = firmware_dir + "/" + file
+        if not os.path.exists(file_path):
+            red("file " + file_path + " not found.")
+            sys.exit(1)
+        green("- Found file: " + file_path)
+
+        # copy the corresponding file
+        cmd = "sudo cp " + file_path + " " + mountpoint1 + "/"
+        outs, errs = run(cmd, shell=True, timeout=5)
+        if errs:
+            red(
+                "Something went wrong while adding the file.\n"
+                + "Review the output: "
+                + errs
+            )
+            sys.exit(1)
+        green("- File added successfully (" + file_path + ").")
 
     def replace_bootbin(self, bootbin_file="BOOT.BIN.default"):
         """
@@ -432,7 +464,9 @@ class KernelSubverb(KRSSubverbExtensionPoint):
             mount_rawimage(rawimage_path, 1)
 
             self.replace_kernel("Image")
-            # self.replace_boot_script()
+            if self.get_board() == "kv260":
+                self.replace_boot_script()
+                self.add_file("ramdisk.cpio.gz.u-boot")
             self.replace_device_tree()
             self.replace_bootbin()
 
@@ -445,7 +479,9 @@ class KernelSubverb(KRSSubverbExtensionPoint):
             mount_rawimage(rawimage_path, 1)
 
             self.replace_kernel("Image_PREEMPT_RT")
-            # self.replace_boot_script()
+            if self.get_board() == "kv260":
+                self.replace_boot_script()
+                self.add_file("ramdisk.cpio.gz.u-boot")
             self.replace_device_tree()
             self.replace_bootbin()
 

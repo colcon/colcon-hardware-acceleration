@@ -1,7 +1,13 @@
-# Copyright (c) 2021, Xilinx®
-# All rights reserved
+#    ____  ____
+#   /   /\/   /
+#  /___/  \  /   Copyright (c) 2021, Xilinx®.
+#  \   \   \/    Author: Víctor Mayoral Vilches <victorma@xilinx.com>
+#   \   \
+#   /   /
+#  /___/   /\
+#  \   \  /  \
+#   \___\/\___\
 #
-# Author: Víctor Mayoral Vilches <victorma@xilinx.com>
 
 import os
 import subprocess
@@ -53,6 +59,48 @@ class KRSSubverbExtensionPoint:
         :returns: The return code
         """
         raise NotImplementedError()
+
+    def get_board(self):
+        """
+        Get the board of the acceleration/firmware/xilinx/ deployment.
+        Reads BOARD file and returns it as a string.
+
+        NOTE: firmware is board-specific. Consult the README of
+        acceleration_firmware_xilinx and/or change branch as per your
+        hardware/board requirements.
+
+        :rtype: String
+        """
+        current_dir = os.environ.get("PWD", "")
+        board_file = current_dir + "/acceleration/firmware/xilinx/BOARD"
+        if os.path.exists(board_file):
+            with open(board_file, "r") as myfile:
+                data = myfile.readlines()
+                return data[0].strip()
+        else:
+            raise FileNotFoundError(
+                board_file,
+                "consider running "
+                + "this command from the root directory of the workspace "
+                + "after xilinx's firmware has been deployed. \n"
+                + "Try 'colcon build --merge-install' first.",
+            )
+
+    def get_platform(self):
+        """
+        Get the board of the acceleration/firmware/xilinx/ deployment.
+        Reads BOARD file and returns it as a string.
+
+        NOTE: firmware is board-specific. Consult the README of
+        acceleration_firmware_xilinx and/or change branch as per your
+        hardware/board requirements.
+
+        :rtype: String
+        """
+        platform_dir = get_platform_dir()
+        cmd = "ls " + platform_dir + " | grep xpfm"
+        outs, errs = run(cmd, shell=True)
+        return outs.replace(".xpfm", "")
 
 
 def get_subverb_extensions():
@@ -313,7 +361,7 @@ def mount_rawimage(rawimage_path, partition=1, debug=False):
 
     param: partition number
 
-    return: None
+    return: String (mountpoint)
     """
 
     # TODO: transform this into a check that "partition" isn't greater

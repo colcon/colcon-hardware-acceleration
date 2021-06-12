@@ -1,7 +1,14 @@
-# Copyright (c) 2021, Xilinx®
-# All rights reserved
+#    ____  ____
+#   /   /\/   /
+#  /___/  \  /   Copyright (c) 2021, Xilinx®.
+#  \   \   \/    Author: Víctor Mayoral Vilches <victorma@xilinx.com>
+#   \   \
+#   /   /
+#  /___/   /\
+#  \   \  /  \
+#   \___\/\___\
 #
-# Author: Víctor Mayoral Vilches <victorma@xilinx.com>
+
 
 def black(text):
     print("\033[30m", text, "\033[0m", sep="")

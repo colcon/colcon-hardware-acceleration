@@ -1,7 +1,13 @@
-# Copyright (c) 2021, Xilinx®
-# All rights reserved
+#    ____  ____
+#   /   /\/   /
+#  /___/  \  /   Copyright (c) 2021, Xilinx®.
+#  \   \   \/    Author: Víctor Mayoral Vilches <victorma@xilinx.com>
+#   \   \
+#   /   /
+#  /___/   /\
+#  \   \  /  \
+#   \___\/\___\
 #
-# Author: Víctor Mayoral Vilches <victorma@xilinx.com>
 
 import os
 import sys
