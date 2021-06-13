@@ -416,9 +416,6 @@ class EmulationSubverb(KRSSubverbExtensionPoint):
     def hw_emu(self, context):  # noqa: D102
         """Compile and launch the "hw_emu" emulation target
 
-        NOTE: -platform-name xilinx_zcu102_base_202020_1 is hardcoded.
-        TODO: fix this and use meta-data from the build.
-
         Args:
             context: superclass context containing arguments, etc.
         """
@@ -435,6 +432,8 @@ class EmulationSubverb(KRSSubverbExtensionPoint):
             "WARNING: Only one kernel can be emulated. Such kernel's package/sim directory should be symlinked"
             " into acceleration/firmware/xilinx/emulation/sim directory."
         )
+
+        platform = self.get_platform()
 
         # TODO: describe more pl_sim_dir
         pl_sim_dir = get_firmware_dir() + "/emulation/sim/behav_waveform/xsim"
@@ -468,7 +467,9 @@ class EmulationSubverb(KRSSubverbExtensionPoint):
             + rawimage_path
             + " -enable-prep-target "
             + " -xtlm-log-state WAVEFORM_AND_LOG "
-            + " -platform-name xilinx_zcu102_base_202020_1 "
+            + " -platform-name "
+            + platform
+            + " "
             + " $* "
         )
         os.system(cmd)

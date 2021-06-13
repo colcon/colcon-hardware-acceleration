@@ -9,6 +9,8 @@
 #   \___\/\___\
 #
 
+import sys
+
 from colcon_core.plugin_system import satisfies_version
 from colcon_krs.subverb import (
     KRSSubverbExtensionPoint,
@@ -35,8 +37,22 @@ class UmountSubverb(KRSSubverbExtensionPoint):
             help="Number of the partition to mount.",
         )
 
+        argument = parser.add_argument("--fix", dest="fix_arg", action="store_true")
+
     def main(self, *, context):  # noqa: D102
         """Umount raw SD image"""
+
+        # fix if hanging
+        if context.args.fix_arg:
+            run("sudo kpartx -d /dev/mapper/diskimage", shell=True, timeout=1)
+            run("sudo dmsetup remove diskimage", shell=True, timeout=1)
+            outs, errs = run("sudo losetup -f", shell=True, timeout=1)
+            loopdevice = int(outs.replace("/dev/loop", ""))
+            loopdevice -= 1
+            print("loopdevice: " + str(loopdevice))
+            run("sudo losetup -d /dev/loop" + str(loopdevice), shell=True, timeout=1)
+            sys.exit(0)
+
         partition = 2
         if context.args.partition:
             partition = context.args.partition
