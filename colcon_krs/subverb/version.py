@@ -29,13 +29,13 @@ class VersionSubverb(KRSSubverbExtensionPoint):
             nargs="?",
             help='Component name (e.g. "vitis" key).',
         )
-        try:
-            from argcomplete.completers import ChoicesCompleter
-        except ImportError:
-            pass
-        else:
-            component_options = ["vitis"]
-            argument.completer = ChoicesCompleter(component_options)
+        # try:
+        #     from argcomplete.completers import ChoicesCompleter
+        # except ImportError:
+        #     pass
+        # else:
+        #     component_options = ["vitis"]
+        #     argument.completer = ChoicesCompleter(component_options)
 
     def main(self, *, context):  # noqa: D102
         """Version of Vitis being used.

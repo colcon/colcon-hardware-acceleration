@@ -54,13 +54,13 @@ class VppSubverb(KRSSubverbExtensionPoint):
             nargs="?",
             help='v++ compiler arguments provided as a String ("example arguments"). ',
         )
-        try:
-            from argcomplete.completers import ChoicesCompleter
-        except ImportError:
-            pass
-        else:
-            options = []
-            argument.completer = ChoicesCompleter(options)
+        # try:
+        #     from argcomplete.completers import ChoicesCompleter
+        # except ImportError:
+        #     pass
+        # else:
+        #     options = []
+        #     argument.completer = ChoicesCompleter(options)
 
     def main(self, *, context):  # noqa: D102
         vitis_dir = get_vitis_dir()

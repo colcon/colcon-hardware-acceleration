@@ -82,13 +82,13 @@ class KernelSubverb(KRSSubverbExtensionPoint):
             help="relative path to the workspace directory to deploy in emulation (typically 'install-*').",
         )
 
-        try:
-            from argcomplete.completers import ChoicesCompleter
-        except ImportError:
-            pass
-        else:
-            type_options = ["vanilla", "preempt_rt"]
-            argument.completer = ChoicesCompleter(type_options)
+        # try:
+        #     from argcomplete.completers import ChoicesCompleter
+        # except ImportError:
+        #     pass
+        # else:
+        #     type_options = ["vanilla", "preempt_rt"]
+        #     argument.completer = ChoicesCompleter(type_options)
 
         # remember the subparser to print usage in case no subverb is passed
         self.parser = parser

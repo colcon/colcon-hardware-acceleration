@@ -83,13 +83,13 @@ class EmulationSubverb(KRSSubverbExtensionPoint):
             default="install",
             help="relative path to the workspace directory to deploy in emulation (typically 'install-*').",
         )
-        try:
-            from argcomplete.completers import ChoicesCompleter
-        except ImportError:
-            pass
-        else:
-            emulation_types = ["sw_emu", "hw_emu"]
-            argument.completer = ChoicesCompleter(emulation_types)
+        # try:
+        #     from argcomplete.completers import ChoicesCompleter
+        # except ImportError:
+        #     pass
+        # else:
+        #     emulation_types = ["sw_emu", "hw_emu"]
+        #     argument.completer = ChoicesCompleter(emulation_types)
 
     def gen_pmufile(self, emulation_files_dir, emulation_file_pmu):
         """
