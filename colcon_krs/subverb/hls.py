@@ -55,9 +55,14 @@ class HLSSubverb(KRSSubverbExtensionPoint):
             help='Name of the package whereto run HLS',
         )
         argument = parser.add_argument("--verbose", dest="verbose", action="store_true")
+        argument = parser.add_argument("--summary", dest="summary", action="store_true")
         argument = parser.add_argument("--run", dest="run", 
             action="store_true", 
             help='Run HLS from CLI according to the Tcl scripts',)
+        argument = parser.add_argument("--silent", dest="silent", 
+            action="store_true", 
+            help="Do not provide a summary for each solution"
+        )
 
     def find_tcl_package(self, package_name):
         """Find Tcl scripts for the package_name
@@ -150,7 +155,7 @@ class HLSSubverb(KRSSubverbExtensionPoint):
 
         return tcl_dic
 
-    def run_tcl(self, tcl):
+    def run_tcl(self, context, tcl):
         """Run Tcl script with vitis_hls
 
         :param string tcl: path to Tcl script
@@ -294,13 +299,124 @@ class HLSSubverb(KRSSubverbExtensionPoint):
             pass
 
 
-    def optimize_tcl(self):
-        """Enhance Tcl script with additional solutions and \
-            optimize time or on resources.
+    def print_summary_solutions(self, configuration):
+        """ Process existing solutions within a configuration data structure and display a summary of them 
 
-        TODO: see https://github.com/vmayoral/hlsclt/blob/master/hlsclt/optimize_commands/optimize_commands.py
+        NOTE: this method operates on the configuration data structure that corresponds to one project. If
+        multiple projects are available in under the same ROS 2 package, multiple calls to this method
+        should be executed.
+
+        NOTE 2: invoke with "--summary" flag. Will ignore status report (which is the default output)
+        
+        :param: configuration: data structure with the HLS configuration (see process_tcl for details)
+        :rtype None
         """
-        pass
+
+        # Create data structures to hold the results.
+        #  each element in the dictionary contains:
+        #     "solutionN": [clk_estimated, float(clk_estimated)*float(interval_max),
+        #                        ,bram_utilization, dsp_utilization, ff_utilization, lut_utilization]
+        results = {}
+
+        # Solutions, each:
+        # {'solution_4ns': {
+        #                 'clock': '4',
+        #                 'path': '/home/xilinx/ros2_ws/build-zcu102/simple_adder/project_simpleadder1/solution_4ns'}
+        # },
+        solutions = configuration["solutions"]
+
+        for s in solutions:
+            solution_key = list(s.keys())[0]
+            csyn_path = s[solution_key]["path"] + "/syn/report/" + configuration["top"] + "_csynth.rpt"
+            # print(csyn_path)
+            try:
+                with open(csyn_path,'r') as f:
+                    results_from_solution = []
+
+                    # Fetch line 23:
+                    #       |ap_clk  |   5.00|     3.492|        0.62|
+                    report_content = f.readlines()
+                    ap_clk_line = report_content[22]
+                    ap_clk_line_elements = [x.strip() for x in ap_clk_line.split('|')]
+                    clk_target = ap_clk_line_elements[2].split()[0]
+                    clk_estimated = ap_clk_line_elements[3].split()[0]
+                    clk_uncertainty = ap_clk_line_elements[4].split()[0]
+                    results_from_solution.append(clk_target)
+                    results_from_solution.append(clk_estimated)                    
+
+                    # Fetch line 32, latency in cycles
+                    #       |        4|        4|  16.000 ns|  16.000 ns|    5|    5|     none|
+                    summary_line = report_content[31]
+                    summary_line_elements = [x.strip() for x in summary_line.split('|')]
+                    latency_max = summary_line_elements[4].split()[0]
+                    # results_from_solution.append((float(clk_estimated) + float(clk_uncertainty))*float(interval_max))
+                    results_from_solution.append(latency_max)
+
+                    # Fetch lines 59 and 63
+                    #      |Total            |        0|     0|     596|     217|    0|
+                    #      |Utilization (%)  |        0|     0|      ~0|      ~0|    0|
+                    # By default it's line 63
+                    total_line = report_content[58]
+                    utilization_line = report_content[62]
+                    
+                    # these lines may not always be in the same positon thereby we need to search for it
+                    # and rewrite it
+                    for i in range(len(report_content)):
+                        if "Utilization" in report_content[i]:
+                            utilization_line = report_content[i]
+                            total_line = report_content[i - 4]
+
+                    # parse utilization %
+                    utilization_line_elements = [x.strip() for x in utilization_line.split('|')]
+                    bram_utilization = utilization_line_elements[2]
+                    dsp_utilization = utilization_line_elements[3]
+                    ff_utilization = utilization_line_elements[4]
+                    lut_utilization = utilization_line_elements[5]
+
+                    # parse total
+                    total_line_elements = [x.strip() for x in total_line.split('|')]
+                    bram_total = total_line_elements[2]
+                    dsp_total = total_line_elements[3]
+                    ff_total = total_line_elements[4]
+                    lut_total = total_line_elements[5]
+
+                    results_from_solution.append(bram_total)
+                    results_from_solution.append(bram_utilization)
+                    results_from_solution.append(dsp_total)
+                    results_from_solution.append(dsp_utilization)
+                    results_from_solution.append(ff_total)
+                    results_from_solution.append(ff_utilization)
+                    results_from_solution.append(lut_total)
+                    results_from_solution.append(lut_utilization)
+
+                    # append results from this iteration in the general dictionary
+                    results[solution_key] = results_from_solution
+
+                f.close()
+            except IOError:
+                pass
+            except IndexError:
+                continue
+
+        # Create data structures to hold the results.
+        #  each element in the dictionary contains:
+        #     "solutionN": [clk_target, clk_estimated, latency_max,
+        #                        ,bram_total, bram_utilization, dsp_total, dsp_utilization,
+        #                         ff_total, ff_utilization, lut_total, lut_utilization]
+        print("Solution#" + "\t" + "tar.clk" + "\t" + "est.clk" + "\t\t" + "latency_max" + "\t"+"BRAM_18K"
+            + "\t"+ "DSP"+ "\t"+ "FF"+ "\t\t"+ "LUT")
+
+        # Order dict according to time, (element[2])
+        results = sorted(results.items(), key=lambda x: float(x[1][2]))
+
+        # Print results
+        # for key, element in results.items():
+        for key, element in results:
+            print(str(key) + "\t" + str(element[0]) + "\t" + str(element[1])
+                + "\t\t" + str(element[2]) + "\t\t" + str(element[3]) + " (" + str(element[4])
+                + "%)\t\t" + str(element[5]) + " (" + str(element[6]) + "%)\t" + str(element[7]) + " (" + str(element[8])
+                + "%)\t" + str(element[9]) + " (" + str(element[10]) + "%)\t")
+
 
     def main(self, *, context):  # noqa: D102
         if not context.args.package_name:   
@@ -318,26 +434,37 @@ class HLSSubverb(KRSSubverbExtensionPoint):
         ########
         if context.args.run:  # run Tcl scripts
             for tcl in package_paths_tcl:
-                green("Found Tcl script \"" + tcl.split("/")[-1] + "\" for package: " + context.args.package_name)
-                print("Executing " + tcl)
+                if not context.args.silent:
+                    green("Found Tcl script \"" + tcl.split("/")[-1] + "\" for package: " + context.args.package_name)
+                    print("Executing " + tcl)
 
                 # launch                
-                self.run_tcl(tcl)
+                self.run_tcl(context, tcl)
             # sys.exit(0)
+
+        ########
+        # summary
+        ########
+        if context.args.summary:
+            for tcl in package_paths_tcl:
+                configuration = self.process_tcl(tcl)
+                solutions = configuration["solutions"]
+                if len(solutions) > 0:
+                    self.print_summary_solutions(configuration)
+            sys.exit(0)
 
         ########
         # status
         ########
-        for tcl in package_paths_tcl:
-            configuration = self.process_tcl(tcl)
-            # print(configuration)
-
-            solutions = configuration["solutions"]
-            if len(solutions) > 1:
-                grayinline("Project: ")
-                print(configuration["project"])
-                grayinline("Path: ")
-                print(configuration["path"])
-                for s in solutions:
-                    self.print_status_solution(s, configuration)
+        if not context.args.silent:
+            for tcl in package_paths_tcl:
+                configuration = self.process_tcl(tcl)
+                solutions = configuration["solutions"]
+                if len(solutions) > 0:
+                    grayinline("Project: ")
+                    print(configuration["project"])
+                    grayinline("Path: ")
+                    print(configuration["path"])
+                    for s in solutions:
+                        self.print_status_solution(s, configuration)
 
