@@ -16,7 +16,7 @@ import sys
 from colcon_core.logging import colcon_logger
 from colcon_core.plugin_system import instantiate_extensions
 from colcon_core.plugin_system import order_extensions_by_name
-from colcon_krs.verb import gray, yellow, red, green
+from colcon_acceleration.verb import gray, yellow, red, green
 
 logger = colcon_logger.getChild(__name__)
 
@@ -29,7 +29,7 @@ mountpoint1 = "/tmp/sdcard_img_p1"
 mountpoint2 = "/tmp/sdcard_img_p2"
 
 
-class KRSSubverbExtensionPoint:
+class AccelerationSubverbExtensionPoint:
     """
     The interface for vitis subverb extensions.
     A vitis subverb extension provides a subverb to the `vitis` verb of

@@ -16,8 +16,8 @@ from colcon_core.package_discovery import discover_packages
 from colcon_core.package_identification \
     import get_package_identification_extensions
 from colcon_core.plugin_system import satisfies_version
-from colcon_krs.subverb import (
-    KRSSubverbExtensionPoint,
+from colcon_acceleration.subverb import (
+    AccelerationSubverbExtensionPoint,
     check_install_directory,
     get_rawimage_path,
     run,
@@ -27,11 +27,11 @@ from colcon_krs.subverb import (
     get_vivado_dir,
     exists
 )
-from colcon_krs.verb import green, yellow, red, greeninline \
+from colcon_acceleration.verb import green, yellow, red, greeninline \
     ,redinline, yellowinline, grayinline, magenta, gray
 
 
-class HLSSubverb(KRSSubverbExtensionPoint):
+class HLSSubverb(AccelerationSubverbExtensionPoint):
     """Xilinx Vitis HLS capabilities extension.
 
     NOTE: Default behavior of this subverb is to show the HLS "status"
@@ -45,7 +45,7 @@ class HLSSubverb(KRSSubverbExtensionPoint):
 
     def __init__(self):  # noqa: D107
         super().__init__()
-        satisfies_version(KRSSubverbExtensionPoint.EXTENSION_POINT_VERSION, "^1.0")
+        satisfies_version(AccelerationSubverbExtensionPoint.EXTENSION_POINT_VERSION, "^1.0")
 
     def add_arguments(self, *, parser):  # noqa: D102
 
@@ -55,7 +55,7 @@ class HLSSubverb(KRSSubverbExtensionPoint):
             help='Name of the package whereto run HLS',
         )
         argument = parser.add_argument("--verbose", dest="verbose", action="store_true")
-        argument = parser.add_argument("--summary", dest="summary", action="store_true")
+        argument = parser.add_argument("--summary", dest="summary", action="store_true")        
         argument = parser.add_argument("--run", dest="run", 
             action="store_true", 
             help='Run HLS from CLI according to the Tcl scripts',)
@@ -63,12 +63,16 @@ class HLSSubverb(KRSSubverbExtensionPoint):
             action="store_true", 
             help="Do not provide a summary for each solution"
         )
+        argument = parser.add_argument("--synthesis-report", dest="synthesis_report", 
+            action="store_true", 
+            help="Extend the status report for each solution with the synthesis report"
+        )
 
     def find_tcl_package(self, package_name):
         """Find Tcl scripts for the package_name
 
         NOTE: silly filtering based on simply substring matching, consider
-        more complex filtering with end-of-string if neccessary in the future
+        more complex filtering with end-of-string if necessary in the future
 
         :param string package_name: ROS 2 package name whereto execute HLS
         :rtype list
@@ -89,7 +93,8 @@ class HLSSubverb(KRSSubverbExtensionPoint):
         for buildir in filter_data:
             build_current_dir = current_dir + "/" + buildir            
             for x in os.listdir(build_current_dir):
-                if all(y in x for y in [package_name]):
+                # if all(y in x for y in [package_name]):
+                if x == package_name:
                     package_paths.append(build_current_dir + "/" + x) 
     
         for p in package_paths:
@@ -161,7 +166,7 @@ class HLSSubverb(KRSSubverbExtensionPoint):
         :param string tcl: path to Tcl script
         :rtype: None
         """         
-        cmd = "cd " + tcl[:tcl.rfind("/")] + " && vitis_hls -f " + tcl
+        cmd = "cd " + tcl[:tcl.rfind("/")] + " && vitis_hls -f " + tcl + " 2> /dev/null"
         outs, errs = run(cmd, shell=True)
         if errs:
             red(errs)
@@ -169,7 +174,7 @@ class HLSSubverb(KRSSubverbExtensionPoint):
         if context.args.verbose:
             print(outs)
 
-    def print_status_solution(self, solution, configuration):
+    def print_status_solution(self, solution, configuration, context):
         """Print the status of a solution
 
         NOTE: Tested in Vitis 2020.2
@@ -261,42 +266,50 @@ class HLSSubverb(KRSSubverbExtensionPoint):
         grayinline("\t\t\t- Export Evaluation: ") 
         green("Run") if "evaluate_done" in project_status else yellow("Not Run")
 
-        try:
+        if context.args.synthesis_report:
+            gray("\t\t- Synthesis report: " + csyn_path )
             with open(csyn_path,'r') as f:
                 report = f.readlines()
-                
-                # print the relevant pieces of the report
-                gray("\t\t- Report:")
-                # Timing and Latency
-                for l in report[14:33]:
+                for l in report:
                     grayinline("\t\t\t" + l)
-                # 
-                for l in report[43:64]:
-                    grayinline("\t\t\t" + l)
+
+        # # NOTE: replaced by --synthesis-report instead
+        # try:
+        #     with open(csyn_path,'r') as f:
+        #         report = f.readlines()
                 
-        # DEPRECATED: changing between Vitis versions so printing the report
-        # instead of parsing lines.
-        #
-        #         # Fetch line 23:
-        #         #       |ap_clk  |   5.00|     3.492|        0.62|
-        #         report_content = f.readlines()
-        #         # print(report_content)
-        #         ap_clk_line = report_content[22]
-        #         ap_clk_line_elements = [x.strip() for x in ap_clk_line.split('|')]
-        #         clk_target = ap_clk_line_elements[2].split()[0]
-        #         clk_estimated = ap_clk_line_elements[3].split()[0]
-        #         clk_uncertainty = ap_clk_line_elements[4].split()[0]
-        #         gray("\t\t- Clock:")
-        #         grayinline("\t\t\t- Target (ns):       ") 
-        #         print(clk_target)
-        #         grayinline("\t\t\t- Estimated (ns):    ")
-        #         green(clk_estimated) if float(clk_estimated) < float(clk_target) else red(clk_estimated)
-        #         grayinline("\t\t\t- Uncertainty (ns):  ")
-        #         yellow(clk_uncertainty)
-        #
-            f.close()
-        except (OSError, IOError):
-            pass
+        #         # print the relevant pieces of the report
+        #         gray("\t\t- Report:")
+        #         # Timing and Latency
+        #         for l in report[14:33]:
+        #             grayinline("\t\t\t" + l)
+        #         # 
+        #         for l in report[43:64]:
+        #             grayinline("\t\t\t" + l)
+                
+        # # DEPRECATED: changing between Vitis versions so printing the report
+        # # instead of parsing lines.
+        # #
+        # #         # Fetch line 23:
+        # #         #       |ap_clk  |   5.00|     3.492|        0.62|
+        # #         report_content = f.readlines()
+        # #         # print(report_content)
+        # #         ap_clk_line = report_content[22]
+        # #         ap_clk_line_elements = [x.strip() for x in ap_clk_line.split('|')]
+        # #         clk_target = ap_clk_line_elements[2].split()[0]
+        # #         clk_estimated = ap_clk_line_elements[3].split()[0]
+        # #         clk_uncertainty = ap_clk_line_elements[4].split()[0]
+        # #         gray("\t\t- Clock:")
+        # #         grayinline("\t\t\t- Target (ns):       ") 
+        # #         print(clk_target)
+        # #         grayinline("\t\t\t- Estimated (ns):    ")
+        # #         green(clk_estimated) if float(clk_estimated) < float(clk_target) else red(clk_estimated)
+        # #         grayinline("\t\t\t- Uncertainty (ns):  ")
+        # #         yellow(clk_uncertainty)
+        # #
+        #     f.close()
+        # except (OSError, IOError):
+        #     pass
 
 
     def print_summary_solutions(self, configuration):
@@ -407,15 +420,24 @@ class HLSSubverb(KRSSubverbExtensionPoint):
             + "\t"+ "DSP"+ "\t"+ "FF"+ "\t\t"+ "LUT")
 
         # Order dict according to time, (element[2])
-        results = sorted(results.items(), key=lambda x: float(x[1][2]))
+        try:
+            results = sorted(results.items(), key=lambda x: float(x[1][2]))
+        except ValueError:
+            pass  # wasn't able to order them
 
         # Print results
-        # for key, element in results.items():
-        for key, element in results:
-            print(str(key) + "\t" + str(element[0]) + "\t" + str(element[1])
-                + "\t\t" + str(element[2]) + "\t\t" + str(element[3]) + " (" + str(element[4])
-                + "%)\t\t" + str(element[5]) + " (" + str(element[6]) + "%)\t" + str(element[7]) + " (" + str(element[8])
-                + "%)\t" + str(element[9]) + " (" + str(element[10]) + "%)\t")
+        if (type(results) is list):
+            for key, element in results:
+                print(str(key) + "\t" + str(element[0]) + "\t" + str(element[1])
+                    + "\t\t" + str(element[2]) + "\t\t" + str(element[3]) + " (" + str(element[4])
+                    + "%)\t\t" + str(element[5]) + " (" + str(element[6]) + "%)\t" + str(element[7]) + " (" + str(element[8])
+                    + "%)\t" + str(element[9]) + " (" + str(element[10]) + "%)\t")
+        else:
+            for key, element in results.items():
+                print(str(key) + "\t" + str(element[0]) + "\t" + str(element[1])
+                    + "\t\t" + str(element[2]) + "\t\t" + str(element[3]) + " (" + str(element[4])
+                    + "%)\t\t" + str(element[5]) + " (" + str(element[6]) + "%)\t" + str(element[7]) + " (" + str(element[8])
+                    + "%)\t" + str(element[9]) + " (" + str(element[10]) + "%)\t")
 
 
     def main(self, *, context):  # noqa: D102
@@ -435,7 +457,7 @@ class HLSSubverb(KRSSubverbExtensionPoint):
         if context.args.run:  # run Tcl scripts
             for tcl in package_paths_tcl:
                 if not context.args.silent:
-                    green("Found Tcl script \"" + tcl.split("/")[-1] + "\" for package: " + context.args.package_name)
+                    print("Found Tcl script \"" + tcl.split("/")[-1] + "\" for package: " + context.args.package_name)
                     print("Executing " + tcl)
 
                 # launch                
@@ -453,6 +475,7 @@ class HLSSubverb(KRSSubverbExtensionPoint):
                     self.print_summary_solutions(configuration)
             sys.exit(0)
 
+
         ########
         # status
         ########
@@ -466,5 +489,5 @@ class HLSSubverb(KRSSubverbExtensionPoint):
                     grayinline("Path: ")
                     print(configuration["path"])
                     for s in solutions:
-                        self.print_status_solution(s, configuration)
+                        self.print_status_solution(s, configuration, context)
 

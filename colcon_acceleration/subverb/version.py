@@ -12,16 +12,16 @@
 import os
 
 from colcon_core.plugin_system import satisfies_version
-from colcon_krs.subverb import KRSSubverbExtensionPoint, get_vitis_dir
-from colcon_krs import __version__
+from colcon_acceleration.subverb import AccelerationSubverbExtensionPoint, get_vitis_dir
+from colcon_acceleration import __version__
 
 
-class VersionSubverb(KRSSubverbExtensionPoint):
+class VersionSubverb(AccelerationSubverbExtensionPoint):
     """Report version of the tool."""
 
     def __init__(self):  # noqa: D107
         super().__init__()
-        satisfies_version(KRSSubverbExtensionPoint.EXTENSION_POINT_VERSION, "^1.0")
+        satisfies_version(AccelerationSubverbExtensionPoint.EXTENSION_POINT_VERSION, "^1.0")
 
     def add_arguments(self, *, parser):  # noqa: D102
         argument = parser.add_argument(

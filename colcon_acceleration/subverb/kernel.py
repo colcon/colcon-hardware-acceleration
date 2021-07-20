@@ -15,8 +15,8 @@ import errno
 from pathlib import Path
 
 from colcon_core.plugin_system import satisfies_version
-from colcon_krs.subverb import (
-    KRSSubverbExtensionPoint,
+from colcon_acceleration.subverb import (
+    AccelerationSubverbExtensionPoint,
     get_vitis_dir,
     get_rawimage_path,
     get_firmware_dir,
@@ -27,7 +27,7 @@ from colcon_krs.subverb import (
     exists,
     copy_ros2_workspace,
 )
-from colcon_krs.verb import green, yellow, red, gray
+from colcon_acceleration.verb import green, yellow, red, gray
 
 
 ## No Xen, simple kernel and rootfs-based
@@ -43,18 +43,18 @@ NUM_DOMUS=0
 """
 
 
-class KernelSubverb(KRSSubverbExtensionPoint):
+class KernelSubverb(AccelerationSubverbExtensionPoint):
     """
     Configure the Linux kernel type.
 
     Typical use is as follows:
-    - "colcon krs kernel vanilla": select vanilla kernel
-    - "colcon krs kernel preempt_rt": select low latency, fully preemptible kernel
+    - "colcon acceleration kernel vanilla": select vanilla kernel
+    - "colcon acceleration kernel preempt_rt": select low latency, fully preemptible kernel
     """
 
     def __init__(self):  # noqa: D107
         super().__init__()
-        satisfies_version(KRSSubverbExtensionPoint.EXTENSION_POINT_VERSION, "^1.0")
+        satisfies_version(AccelerationSubverbExtensionPoint.EXTENSION_POINT_VERSION, "^1.0")
 
     def add_arguments(self, *, parser):  # noqa: D102
         argument = parser.add_argument(

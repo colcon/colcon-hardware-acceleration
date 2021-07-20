@@ -13,8 +13,8 @@ import os
 import sys
 
 from colcon_core.plugin_system import satisfies_version
-from colcon_krs.subverb import (
-    KRSSubverbExtensionPoint,
+from colcon_acceleration.subverb import (
+    AccelerationSubverbExtensionPoint,
     get_vitis_dir,
     get_build_dir,
     run,
@@ -22,10 +22,10 @@ from colcon_krs.subverb import (
     get_vitis_hls_dir,
     get_platform_dir,
 )
-from colcon_krs.verb import yellow, red
+from colcon_acceleration.verb import yellow, red
 
 
-class VppSubverb(KRSSubverbExtensionPoint):
+class VppSubverb(AccelerationSubverbExtensionPoint):
     """Xilinx Vitis v++ compiler command.
 
     TODO: Document build process with v++. Document environmental variables
@@ -39,7 +39,7 @@ class VppSubverb(KRSSubverbExtensionPoint):
 
     def __init__(self):  # noqa: D107
         super().__init__()
-        satisfies_version(KRSSubverbExtensionPoint.EXTENSION_POINT_VERSION, "^1.0")
+        satisfies_version(AccelerationSubverbExtensionPoint.EXTENSION_POINT_VERSION, "^1.0")
 
     def add_arguments(self, *, parser):  # noqa: D102
         parser.description += (

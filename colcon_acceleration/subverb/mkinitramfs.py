@@ -13,8 +13,8 @@ import os
 import sys
 
 from colcon_core.plugin_system import satisfies_version
-from colcon_krs.subverb import (
-    KRSSubverbExtensionPoint,
+from colcon_acceleration.subverb import (
+    AccelerationSubverbExtensionPoint,
     check_install_directory,
     get_rawimage_path,
     run,
@@ -25,10 +25,10 @@ from colcon_krs.subverb import (
     mount_rawimage,
     umount_rawimage,
 )
-from colcon_krs.verb import green, yellow, red
+from colcon_acceleration.verb import green, yellow, red
 
 
-class MkinitramfsSubverb(KRSSubverbExtensionPoint):
+class MkinitramfsSubverb(AccelerationSubverbExtensionPoint):
     """Creates compressed cpio initramfs (ramdisks)
 
     This subverb grabs the current sd_card.img raw disk image, extracts the
@@ -40,7 +40,7 @@ class MkinitramfsSubverb(KRSSubverbExtensionPoint):
 
     def __init__(self):  # noqa: D107
         super().__init__()
-        satisfies_version(KRSSubverbExtensionPoint.EXTENSION_POINT_VERSION, "^1.0")
+        satisfies_version(AccelerationSubverbExtensionPoint.EXTENSION_POINT_VERSION, "^1.0")
 
     def add_arguments(self, *, parser):  # noqa: D102
         parser.add_argument(

@@ -15,8 +15,8 @@ import errno
 from pathlib import Path
 
 from colcon_core.plugin_system import satisfies_version
-from colcon_krs.subverb import (
-    KRSSubverbExtensionPoint,
+from colcon_acceleration.subverb import (
+    AccelerationSubverbExtensionPoint,
     get_vitis_dir,
     get_rawimage_path,
     get_firmware_dir,
@@ -31,7 +31,7 @@ from colcon_krs.subverb import (
     exists,
     copy_ros2_workspace,
 )
-from colcon_krs.verb import green, yellow, red, gray
+from colcon_acceleration.verb import green, yellow, red, gray
 
 ## Only dom0
 TEMPLATE_CONFIG = """\
@@ -45,14 +45,14 @@ UBOOT_SCRIPT=boot.scr
 """
 
 
-class HypervisorSubverb(KRSSubverbExtensionPoint):
+class HypervisorSubverb(AccelerationSubverbExtensionPoint):
     """
     Configure the Xen hypervisor.
     """
 
     def __init__(self):  # noqa: D107
         super().__init__()
-        satisfies_version(KRSSubverbExtensionPoint.EXTENSION_POINT_VERSION, "^1.0")
+        satisfies_version(AccelerationSubverbExtensionPoint.EXTENSION_POINT_VERSION, "^1.0")
 
     def add_arguments(self, *, parser):  # noqa: D102
 
