@@ -155,9 +155,11 @@ class HLSSubverb(AccelerationSubverbExtensionPoint):
         tcl_dic["top"] = top
         tcl_dic["solutions"] = []
         for i in range(len(solutions)):
-            solution = {solutions[i]:{"clock":clocks[i], "path":path + "/" + solutions[i]}}
+            solution = {solutions[i].replace("-flow_target vitis", "").strip():{"clock":clocks[i], 
+                "path":path + "/" + solutions[i].replace("-flow_target vitis", "").strip()}}
             tcl_dic["solutions"].append(solution)
 
+        print(tcl_dic)
         return tcl_dic
 
     def run_tcl(self, context, tcl):
