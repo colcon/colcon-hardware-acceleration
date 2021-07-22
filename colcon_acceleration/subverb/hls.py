@@ -159,7 +159,6 @@ class HLSSubverb(AccelerationSubverbExtensionPoint):
                 "path":path + "/" + solutions[i].replace("-flow_target vitis", "").strip()}}
             tcl_dic["solutions"].append(solution)
 
-        print(tcl_dic)
         return tcl_dic
 
     def run_tcl(self, context, tcl):
