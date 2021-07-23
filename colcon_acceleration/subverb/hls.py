@@ -220,11 +220,11 @@ class HLSSubverb(AccelerationSubverbExtensionPoint):
             with open(cosim_path,'r') as f:
                 # search through cosim report to find out pass/fail status for each language
                 for line in f:
-                    if config["language"] in line.lower():
-                        if "pass" in line.lower():
-                            project_status.append('cosim_pass')
-                        elif "fail" in line.lower():
-                            project_status.append('cosim_fail')
+                    # if configuration["language"] in line.lower():
+                    if "pass" in line.lower():
+                        project_status.append('cosim_pass')
+                    elif "fail" in line.lower():
+                        project_status.append('cosim_fail')
                 project_status.append('cosim_done')
             f.close()
         except (OSError, IOError):

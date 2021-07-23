@@ -126,6 +126,8 @@ class EmulationSubverb(AccelerationSubverbExtensionPoint):
         NOTE: If files exists, does nothing. This allows developers to iterate/
         edit the arguments to the emulation.
 
+        NOTE 2: the configuration is set for the default dev. board, the ZCU102
+
         :param: emulation_files_dir: path to the emulation files directory
         :param: emulation_file_qemu: path of the file to create
         """
@@ -158,6 +160,38 @@ class EmulationSubverb(AccelerationSubverbExtensionPoint):
             file_str += "loader,file=" + emulation_files_dir + "/../u-boot.elf" + "\n"
             file_str += "-boot" + "\n"
             file_str += "mode=5" + "\n"
+
+            f = open(emulation_file_qemu, "w")
+            f.truncate(0)  # delete previous content
+            f.write(file_str)
+            f.close()
+
+    def gen_qemufile_kv260(self, emulation_files_dir, emulation_file_qemu):
+        """
+        Generate emulation arguments file for virtualizing the PS/PL side of the KV260, 
+        if it doesn't exist previously.
+
+        NOTE: If files exists, does nothing. This allows developers to iterate/
+        edit the arguments to the emulation.
+
+        :param: emulation_files_dir: path to the emulation files directory
+        :param: emulation_file_qemu: path of the file to create
+        """
+        if not os.path.exists(emulation_file_qemu):
+            
+            file_str = "-M arm-generic-fdt\n"
+            file_str += "-serial /dev/null -serial mon:stdio -display none" + "\n"
+            file_str += "-device loader,file=" + emulation_files_dir + "/../bl31.elf,cpu-num=0" + "\n"
+            file_str += "-device loader,file=" + emulation_files_dir + "/../ramdisk.cpio.gz.u-boot,addr=0x04000000,force-raw" + "\n"
+            file_str += "-device loader,file=" + emulation_files_dir + "/../u-boot.elf" + "\n"
+            file_str += "-device loader,file=" + emulation_files_dir + "/../kernel/Image,addr=0x00200000,force-raw" + "\n"
+            file_str += "-device loader,file=" + emulation_files_dir + "/../device_tree/u-boot.dtb,addr=0x00100000,force-raw" + "\n"
+            file_str += "-device loader,file=" + emulation_files_dir + "/../boot_scripts/boot.scr.default,addr=0x20000000,force-raw" + "\n"
+            file_str += "-gdb tcp::9000" + "\n"
+            file_str += "-net nic -net nic -net nic -net nic,netdev=eth0 -netdev user,id=eth0,tftp=/tftpboot" + "\n"
+            file_str += "-hw-dtb " + emulation_files_dir + "/../zynqmp-qemu-multiarch-arm.dtb" + "\n"
+            file_str += "-global xlnx,zynqmp-boot.cpu-num=0 -global xlnx,zynqmp-boot.use-pmufw=true" + "\n"
+            file_str += "-m 4G" + "\n"
 
             f = open(emulation_file_qemu, "w")
             f.truncate(0)  # delete previous content
@@ -366,7 +400,10 @@ class EmulationSubverb(AccelerationSubverbExtensionPoint):
         self.gen_pmufile(emulation_files_dir, emulation_file_pmu)
 
         emulation_file_qemu = emulation_files_dir + "/qemu_args.txt"
-        self.gen_qemufile(emulation_files_dir, emulation_file_qemu)
+        if self.get_board() == "kv260":
+            self.gen_qemufile_kv260(emulation_files_dir, emulation_file_qemu)
+        else:  # default to zcu102
+            self.gen_qemufile(emulation_files_dir, emulation_file_qemu)
         green("- Generated PMU and QEMU files.")
 
         return emulation_file_qemu, emulation_file_pmu, rawimage_path
@@ -393,7 +430,7 @@ class EmulationSubverb(AccelerationSubverbExtensionPoint):
         vitis_dir = get_vitis_dir()
         firmware_dir = get_firmware_dir()
         emulation_files_dir = firmware_dir + "/emulation"
-
+        
         cmd = (
             "cd "
             + emulation_files_dir
@@ -410,6 +447,7 @@ class EmulationSubverb(AccelerationSubverbExtensionPoint):
             + rawimage_path
             + " -enable-prep-target $*"
         )
+        # print(cmd)
         os.system(cmd)
         green("Finalized successfully.")
 
