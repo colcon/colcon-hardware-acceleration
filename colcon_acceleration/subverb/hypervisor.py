@@ -38,7 +38,6 @@ TEMPLATE_CONFIG = """\
 MEMORY_START=0x0
 MEMORY_END=0x80000000
 DEVICE_TREE=system.dtb
-BOOTBIN=BOOT.BIN
 XEN=xen
 UBOOT_SOURCE=boot.source
 UBOOT_SCRIPT=boot.scr
@@ -101,6 +100,13 @@ class HypervisorSubverb(AccelerationSubverbExtensionPoint):
             dest="install_dir",
             type=str,
             help="relative path to the workspace directory to deploy in emulation (typically 'install-*').",
+        )
+
+        argument = parser.add_argument(
+            "--dom0-ramdisk",
+            dest="dom0_ramdisk",
+            type=str,
+            help="Dom0 ramdisk filename to use (instead of the default rootfs). Copied in the first partition.",
         )
 
         # try:
@@ -331,21 +337,22 @@ class HypervisorSubverb(AccelerationSubverbExtensionPoint):
             sys.exit(1)
         green("- Successfully created Xen /var/lib/xen directory in rootfs.")
 
-        # setup /etc/inittab for Xen
-        cmd = (
-            "sudo sed -i 's-PS0:12345:respawn:/bin/start_getty 115200 ttyPS0 vt102-X0:12345:respawn:/sbin/getty 115200 hvc0-g' "
-            + mountpoint_partition
-            + "/etc/inittab"
-        )
-        outs, errs = run(cmd, shell=True, timeout=5)
-        if errs:
-            red(
-                "Something went wrong while setting up /etc/inittab for Xen in rootfs.\n"
-                + "Review the output: "
-                + errs
+        if not self.get_board() == "kv260":
+            # setup /etc/inittab for Xen
+            cmd = (
+                "sudo sed -i 's-PS0:12345:respawn:/bin/start_getty 115200 ttyPS0 vt102-X0:12345:respawn:/sbin/getty 115200 hvc0-g' "
+                + mountpoint_partition
+                + "/etc/inittab"
             )
-            sys.exit(1)
-        green("- Successfully setup /etc/inittab for Xen in rootfs.")
+            outs, errs = run(cmd, shell=True, timeout=5)
+            if errs:
+                red(
+                    "Something went wrong while setting up /etc/inittab for Xen in rootfs.\n"
+                    + "Review the output: "
+                    + errs
+                )
+                sys.exit(1)
+            green("- Successfully setup /etc/inittab for Xen in rootfs.")
 
         # umount raw disk image
         umount_rawimage(partition)
@@ -391,7 +398,7 @@ class HypervisorSubverb(AccelerationSubverbExtensionPoint):
 
         # create auxiliary directory for compiling all artifacts for the hypervisor
         auxdir = "/tmp/hypervisor"
-        run("mkdir " + auxdir, shell=True, timeout=1)
+        run("mkdir " + auxdir + " 2> /dev/null", shell=True, timeout=1)
 
         firmware_dir = get_firmware_dir()  # directory where firmware is
 
@@ -455,30 +462,46 @@ class HypervisorSubverb(AccelerationSubverbExtensionPoint):
                 red("Unrecognized dom0 arg.")
                 sys.exit(1)
 
-            # TEMPLATE_CONFIG += "DOM0_RAMDISK=initrd.cpio\n"  # ignored when using SD
-            # green("- Dom0 rootfs assumed to reside in the second SD partition.")
-
-            # Copy Dom0's rootfs
-            if not context.args.rootfs_args or (len(context.args.rootfs_args) < 1):
-                yellow(
-                    "- No rootfs for Dom0 provided. Defaulting to "
-                    + str(default_rootfs)
-                )
-                rootfs = default_rootfs
-                assert exists(firmware_dir + "/" + rootfs)
-                run(
-                    "cp " + firmware_dir + "/" + rootfs + " " + auxdir + "/" + rootfs,
-                    shell=True,
-                    timeout=1,
-                )
-                green("- Copied to temporary directory rootfs: " + rootfs)
+            if context.args.dom0_ramdisk:
+                # Dom's ramdisk
+                if os.path.exists(firmware_dir + "/" + context.args.dom0_ramdisk):
+                    run(
+                        "cp " + firmware_dir + "/" + context.args.dom0_ramdisk + " " + auxdir + "/" + context.args.dom0_ramdisk,
+                        shell=True,
+                        timeout=1,
+                    )
+                    TEMPLATE_CONFIG += "DOM0_RAMDISK="+ context.args.dom0_ramdisk + "\n"
+                    green("- Dom0 ramdisk: " + context.args.dom0_ramdisk)
+                else:
+                    red(context.args.dom0_ramdisk + " not found")
+                    sys.exit(1)
             else:
-                rootfs = context.args.rootfs_args[num_domus]
-                num_domus += 1  # jump over first rootfs arg
-                # this way, list will be consistent
-                # when interating over DomUs
+                # Dom0's rootfs
+                if not context.args.rootfs_args or (len(context.args.rootfs_args) < 1):
+                    yellow(
+                        "- No rootfs for Dom0 provided. Defaulting to "
+                        + str(default_rootfs)
+                    )
+                    rootfs = default_rootfs
+                    assert exists(firmware_dir + "/" + rootfs)
+                    run(
+                        "cp " + firmware_dir + "/" + rootfs + " " + auxdir + "/" + rootfs,
+                        shell=True,
+                        timeout=1,
+                    )
+                else:
+                    rootfs = context.args.rootfs_args[num_domus]
+                    num_domus += 1  # jump over first rootfs arg
+                    green("- Using " + rootfs + "rootfs for Dom0")
 
-            TEMPLATE_CONFIG += "DOM0_ROOTFS=" + str(rootfs) + "\n"
+                    # this way, list will be consistent
+                    # when interating over DomUs
+
+                TEMPLATE_CONFIG += "DOM0_ROOTFS=" + str(rootfs) + "\n"
+                if self.get_board() == "kv260":
+                    # KV260 requires special arguments to handle the juggling of device tree overlays, as opposed to the ramdisk
+                    # shipped in the OOB experience
+                    TEMPLATE_CONFIG += 'DOM0_CMD="console=hvc0 earlycon=xen earlyprintk=xen clk_ignore_unused root=/dev/mmcblk0p2"\n'
 
             #####################
             # process DomUs
@@ -596,10 +619,6 @@ class HypervisorSubverb(AccelerationSubverbExtensionPoint):
             # Add NUM_DOMUS at the end
             TEMPLATE_CONFIG += "NUM_DOMUS=" + str(num_domus) + "\n"
 
-            if context.args.debug:
-                gray("Debugging config file:")
-                gray(TEMPLATE_CONFIG)
-
             # copy the artifacts to auxiliary directory
             run("cp " + firmware_dir + "/xen " + auxdir + "/xen", shell=True, timeout=1)
             run(
@@ -612,42 +631,84 @@ class HypervisorSubverb(AccelerationSubverbExtensionPoint):
                 timeout=1,
             )
 
-            # handle BOOT.BIN separately, priorizing first the symlink generated by building kernels
-            bootbin_symlink_path = Path(firmware_dir + "/BOOT.BIN")
-            if bootbin_symlink_path.is_symlink():
-                try:
-                    os.stat(bootbin_symlink_path)
-                except OSError as e:
-                    if e.errno == errno.ENOENT:
-                        print(
-                            "path %s does not exist or is a broken symlink"
-                            % bootbin_symlink_path
-                        )
-                        sys.exit(1)
-                    else:
-                        raise e
+            if self.get_board() == "kv260":
+                TEMPLATE_CONFIG += ('XEN_CMD="console=dtuart dtuart=serial0 dom0_mem=2G dom0_max_vcpus=1 ' + 
+                                        'bootscrub=0 vwfi=native sched=null"\n')
 
-                if not os.path.exists(bootbin_symlink_path):
-                    red("BOOT.BIN file " + bootbin_symlink_path + " not found.")
-                    sys.exit(1)
-                green("- Found device BOOT.BIN file: " + str(bootbin_symlink_path))
-                run(
-                    "cp " + str(bootbin_symlink_path) + " " + auxdir + "/BOOT.BIN",
-                    shell=True,
-                    timeout=1,
-                )
-            else:
-                green("- Using default BOOT.BIN.xen file.")
+                # # NOTE: do it instead through device tree overlays
+                # run("cp " + firmware_dir + "/ramdisk.cpio.gz.u-boot " + auxdir + "/ramdisk.cpio.gz.u-boot", shell=True, timeout=1)                
+                TEMPLATE_CONFIG += ('DT_OVERLAY[0]="zynqmp-sck-kv-g-qemu.dtbo"\n')
+                TEMPLATE_CONFIG += ('DT_OVERLAY[1]="mmc-enable.dtbo"\n')
+                TEMPLATE_CONFIG += ('NUM_DT_OVERLAY=2\n')
+
+                # copy files
                 run(
                     "cp "
                     + firmware_dir
-                    + "/bootbin/BOOT.BIN.xen "
+                    + "/device_tree/mmc-enable.dtbo "
                     + auxdir
-                    + "/BOOT.BIN",
+                    + "/mmc-enable.dtbo",
+                    shell=True,
+                    timeout=1,
+                )
+                run(
+                    "cp "
+                    + firmware_dir
+                    + "/device_tree/zynqmp-sck-kv-g-qemu.dtbo "
+                    + auxdir
+                    + "/zynqmp-sck-kv-g-qemu.dtbo",
                     shell=True,
                     timeout=1,
                 )
 
+
+                # NOTE: BOOT.BIN in KV260 is handled differently
+            else:                                
+                # handle BOOT.BIN separately, priorizing first the symlink generated by building kernels
+                bootbin_symlink_path = Path(firmware_dir + "/BOOT.BIN")
+                if bootbin_symlink_path.is_symlink():
+                    try:
+                        os.stat(bootbin_symlink_path)
+                    except OSError as e:
+                        if e.errno == errno.ENOENT:
+                            print(
+                                "path %s does not exist or is a broken symlink"
+                                % bootbin_symlink_path
+                            )
+                            sys.exit(1)
+                        else:
+                            raise e
+
+                    if not os.path.exists(bootbin_symlink_path):
+                        red("BOOT.BIN file " + bootbin_symlink_path + " not found.")
+                        sys.exit(1)
+                    green("- Found device BOOT.BIN file: " + str(bootbin_symlink_path))
+                    run(
+                        "cp " + str(bootbin_symlink_path) + " " + auxdir + "/BOOT.BIN",
+                        shell=True,
+                        timeout=1,
+                    )
+                else:
+                    green("- Using default BOOT.BIN.xen file.")
+                    run(
+                        "cp "
+                        + firmware_dir
+                        + "/bootbin/BOOT.BIN.xen "
+                        + auxdir
+                        + "/BOOT.BIN",
+                        shell=True,
+                        timeout=1,
+                    )
+
+                # Add BOOT.BIN to template
+                TEMPLATE_CONFIG += ('BOOTBIN=BOOT.BIN\n')
+
+            if context.args.debug:
+                gray("Debugging config file:")
+                gray(TEMPLATE_CONFIG)
+
+
+            # initrd.cpio
             # copy (at least) default ramdisk initrd.cpio and default rootfs rootfs.cpio.gz
             run(
                 "cp "
@@ -722,13 +783,23 @@ class HypervisorSubverb(AccelerationSubverbExtensionPoint):
             imagebuilder_path_configscript = (
                 imagebuilder_dir + "/scripts/uboot-script-gen"
             )
-            cmd = (
-                "cd "
-                + auxdir
-                + " && bash "
-                + imagebuilder_path_configscript
-                + " -c xen.cfg -d . -t sd"
-            )
+            if self.get_board() == "kv260":
+                cmd = (
+                    "cd "
+                    + auxdir
+                    + " && bash "
+                    + imagebuilder_path_configscript
+                    + ' -c xen.cfg -d . -t "load mmc 1:1"'
+                    # + ' -c xen.cfg -d . -t sd'
+                )
+            else:  # assume zcu102
+                cmd = (
+                    "cd "
+                    + auxdir
+                    + " && bash "
+                    + imagebuilder_path_configscript
+                    + " -c xen.cfg -d . -t sd"
+                )
 
             if context.args.debug:
                 gray(cmd)
@@ -822,9 +893,12 @@ class HypervisorSubverb(AccelerationSubverbExtensionPoint):
             # umount_rawimage(1)
 
             # Xen SD card fixes
-            # creates missing tmp dirs for Xen proper functioning, configures /etc/inittab, etc.
-            # TODO: review this overtime in case PetaLinux output becomes differently
-            self.xen_fixes(partition=2)
+            # NOTE: Only applicable to images with rootfs in partition 2,
+            #       which are most, except those with dom0_ramdisk
+            if not context.args.dom0_ramdisk:
+                # creates missing tmp dirs for Xen proper functioning, configures /etc/inittab, etc.
+                # TODO: review this overtime in case PetaLinux output becomes differently
+                self.xen_fixes(partition=2)
 
             # apply fixes also to every domU
             if context.args.domU_args:

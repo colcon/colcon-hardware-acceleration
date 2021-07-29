@@ -83,6 +83,13 @@ class EmulationSubverb(AccelerationSubverbExtensionPoint):
             default="install",
             help="relative path to the workspace directory to deploy in emulation (typically 'install-*').",
         )
+        argument = parser.add_argument("--no-install", 
+            action="store_true", 
+            default=False, 
+            help="Do not copy install_dir (or default) to second partition",
+            dest="no_install",
+        )
+
         # try:
         #     from argcomplete.completers import ChoicesCompleter
         # except ImportError:
@@ -182,13 +189,13 @@ class EmulationSubverb(AccelerationSubverbExtensionPoint):
             file_str = "-M arm-generic-fdt\n"
             file_str += "-serial /dev/null -serial mon:stdio -display none" + "\n"
             file_str += "-device loader,file=" + emulation_files_dir + "/../bl31.elf,cpu-num=0" + "\n"
-            file_str += "-device loader,file=" + emulation_files_dir + "/../ramdisk.cpio.gz.u-boot,addr=0x04000000,force-raw" + "\n"
+            # file_str += "-device loader,file=" + emulation_files_dir + "/../ramdisk.cpio.gz.u-boot,addr=0x04000000,force-raw" + "\n"
             file_str += "-device loader,file=" + emulation_files_dir + "/../u-boot.elf" + "\n"
-            file_str += "-device loader,file=" + emulation_files_dir + "/../kernel/Image,addr=0x00200000,force-raw" + "\n"
+            # file_str += "-device loader,file=" + emulation_files_dir + "/../kernel/Image,addr=0x00200000,force-raw" + "\n"
             file_str += "-device loader,file=" + emulation_files_dir + "/../device_tree/u-boot.dtb,addr=0x00100000,force-raw" + "\n"
-            file_str += "-device loader,file=" + emulation_files_dir + "/../boot_scripts/boot.scr.default,addr=0x20000000,force-raw" + "\n"
             file_str += "-gdb tcp::9000" + "\n"
-            file_str += "-net nic -net nic -net nic -net nic,netdev=eth0 -netdev user,id=eth0,tftp=/tftpboot" + "\n"
+            # file_str += "-net nic -net nic -net nic -net nic,netdev=eth0 -netdev user,id=eth0,tftp=/tftpboot" + "\n"
+            file_str += "-net nic -net nic -net nic -net nic -net user,hostfwd=tcp:127.0.0.1:2222-10.0.2.15:22" + "\n"
             file_str += "-hw-dtb " + emulation_files_dir + "/../zynqmp-qemu-multiarch-arm.dtb" + "\n"
             file_str += "-global xlnx,zynqmp-boot.cpu-num=0 -global xlnx,zynqmp-boot.use-pmufw=true" + "\n"
             file_str += "-m 4G" + "\n"
@@ -225,10 +232,6 @@ class EmulationSubverb(AccelerationSubverbExtensionPoint):
             sys.exit(1)
         green("- Verified that install/ is available in the current ROS 2 workspace")
 
-        #########################
-        # 2. mounts the embedded raw image ("sd_card.img" file) available in deployed firmware
-        #     and deploys the `<workspace>/install/` directory under "/ros2_ws" in the rootfs.
-        #########################
         rawimage_path = get_rawimage_path()
         if not rawimage_path:
             red(
@@ -240,146 +243,151 @@ class EmulationSubverb(AccelerationSubverbExtensionPoint):
             sys.exit(1)
         green("- Confirmed availability of raw image file at: " + rawimage_path)
 
-        # fetch UNITS
-        units = None
-        cmd = "fdisk -l " + rawimage_path + " | grep 'Units' | awk '{print $8}'"
-        outs, errs = run(cmd, shell=True)
-        if outs:
-            units = int(outs)
-        if not units:
-            red(
-                "Something went wrong while fetching the raw image UNITS.\n"
-                + "Review the output: "
-                + outs
-            )
-            sys.exit(1)
+        #########################
+        # 2. mounts the embedded raw image ("sd_card.img" file) available in deployed firmware
+        #     and deploys the `<workspace>/install/` directory under "/ros2_ws" in the rootfs.
+        #########################
+        if not context.args.no_install:
+            # fetch UNITS
+            units = None
+            cmd = "fdisk -l " + rawimage_path + " | grep 'Units' | awk '{print $8}'"
+            outs, errs = run(cmd, shell=True)
+            if outs:
+                units = int(outs)
+            if not units:
+                red(
+                    "Something went wrong while fetching the raw image UNITS.\n"
+                    + "Review the output: "
+                    + outs
+                )
+                sys.exit(1)
 
-        # fetch STARTSECTORP1
-        startsectorp1 = None
-        cmd = "fdisk -l " + rawimage_path + " | grep 'img1' | awk '{print $3}'"
-        outs, errs = run(cmd, shell=True)
-        if outs:
-            startsectorp1 = int(outs)
-        if not startsectorp1:
-            red(
-                "Something went wrong while fetching the raw image STARTSECTORP1.\n"
-                + "Review the output: "
-                + outs
-            )
-            sys.exit(1)
+            # fetch STARTSECTORP1
+            startsectorp1 = None
+            cmd = "fdisk -l " + rawimage_path + " | grep 'img1' | awk '{print $3}'"
+            outs, errs = run(cmd, shell=True)
+            if outs:
+                startsectorp1 = int(outs)
+            if not startsectorp1:
+                red(
+                    "Something went wrong while fetching the raw image STARTSECTORP1.\n"
+                    + "Review the output: "
+                    + outs
+                )
+                sys.exit(1)
 
-        # fetch STARTSECTORP2
-        startsectorp2 = None
-        cmd = "fdisk -l " + rawimage_path + " | grep 'img2' | awk '{print $2}'"
-        outs, errs = run(cmd, shell=True)
-        if outs:
-            startsectorp2 = int(outs)
-        if not startsectorp2:
-            red(
-                "Something went wrong while fetching the raw image STARTSECTORP2.\n"
-                + "Review the output: "
-                + outs
-                if outs
-                else "None"
-            )
-            sys.exit(1)
-        green("- Finished inspecting raw image, obtained UNITS and STARTSECTOR P1/P2")
+            # fetch STARTSECTORP2
+            startsectorp2 = None
+            cmd = "fdisk -l " + rawimage_path + " | grep 'img2' | awk '{print $2}'"
+            outs, errs = run(cmd, shell=True)
+            if outs:
+                startsectorp2 = int(outs)
+            if not startsectorp2:
+                red(
+                    "Something went wrong while fetching the raw image STARTSECTORP2.\n"
+                    + "Review the output: "
+                    + outs
+                    if outs
+                    else "None"
+                )
+                sys.exit(1)
+            green("- Finished inspecting raw image, obtained UNITS and STARTSECTOR P1/P2")
 
-        # define mountpoint and mount
-        mountpoint = "/tmp/sdcard_img_p2"
-        cmd = "mkdir -p " + mountpoint
-        outs, errs = run(cmd, shell=True)
-        if errs:
-            red(
-                "Something went wrong while setting MOUNTPOINT.\n"
-                + "Review the output: "
-                + errs
-            )
-            sys.exit(1)
-        cmd = (
-            "sudo mount -o loop,offset="
-            + str(units * startsectorp2)
-            + " "
-            + rawimage_path
-            + " "
-            + mountpoint
-        )
-
-        # # debug
-        # print(cmd)
-
-        outs, errs = run(
-            cmd, shell=True, timeout=15
-        )  # longer timeout, allow user to input password
-        if errs:
-            red("Something went wrong while mounting.\n" + "Review the output: " + errs)
-            sys.exit(1)
-        green("- Image mounted successfully at: " + mountpoint)
-
-        # remove prior overlay ROS 2 workspace files at "/ros2_ws",
-        #  and copy the <ws>/install directory as such
-        if os.path.exists(mountpoint + "/ros2_ws"):
-            cmd = "sudo rm -r " + mountpoint + "/ros2_ws/*"
+            # define mountpoint and mount
+            mountpoint = "/tmp/sdcard_img_p2"
+            cmd = "mkdir -p " + mountpoint
             outs, errs = run(cmd, shell=True)
             if errs:
                 red(
-                    "Something went wrong while removing image workspace.\n"
+                    "Something went wrong while setting MOUNTPOINT.\n"
+                    + "Review the output: "
+                    + errs
+                )
+                sys.exit(1)
+            cmd = (
+                "sudo mount -o loop,offset="
+                + str(units * startsectorp2)
+                + " "
+                + rawimage_path
+                + " "
+                + mountpoint
+            )
+
+            # # debug
+            # print(cmd)
+
+            outs, errs = run(
+                cmd, shell=True, timeout=15
+            )  # longer timeout, allow user to input password
+            if errs:
+                red("Something went wrong while mounting.\n" + "Review the output: " + errs)
+                sys.exit(1)
+            green("- Image mounted successfully at: " + mountpoint)
+
+            # remove prior overlay ROS 2 workspace files at "/ros2_ws",
+            #  and copy the <ws>/install directory as such
+            if os.path.exists(mountpoint + "/ros2_ws"):
+                cmd = "sudo rm -r " + mountpoint + "/ros2_ws/*"
+                outs, errs = run(cmd, shell=True)
+                if errs:
+                    red(
+                        "Something went wrong while removing image workspace.\n"
+                        + "Review the output: "
+                        + errs
+                    )
+                    sys.exit(1)
+                green(
+                    "- Successfully cleaned up prior overlay ROS 2 workspace "
+                    + "at: "
+                    + mountpoint
+                    + "/ros2_ws"
+                )
+            else:
+                yellow(
+                    "No prior overlay ROS 2 workspace found "
+                    + "at: "
+                    + mountpoint
+                    + "/ros2_ws, creating it."
+                )
+                cmd = "sudo mkdir " + mountpoint + "/ros2_ws"
+                outs, errs = run(cmd, shell=True)
+                if errs:
+                    red(
+                        "Something went wrong while creating overlay ROS 2 workspace.\n"
+                        + "Review the output: "
+                        + errs
+                    )
+                    sys.exit(1)
+
+            install_dir = get_install_dir(context.args.install_dir)
+            cmd = "sudo cp -r " + install_dir + "/* " + mountpoint + "/ros2_ws"
+            outs, errs = run(cmd, shell=True)
+            if errs:
+                red(
+                    "Something went wrong while copying overlay ROS 2 workspace to mountpoint.\n"
                     + "Review the output: "
                     + errs
                 )
                 sys.exit(1)
             green(
-                "- Successfully cleaned up prior overlay ROS 2 workspace "
-                + "at: "
-                + mountpoint
-                + "/ros2_ws"
+                "- Copied '"
+                + context.args.install_dir
+                + "' directory as a ROS 2 overlay workspace in the raw image."
             )
-        else:
-            yellow(
-                "No prior overlay ROS 2 workspace found "
-                + "at: "
-                + mountpoint
-                + "/ros2_ws, creating it."
-            )
-            cmd = "sudo mkdir " + mountpoint + "/ros2_ws"
-            outs, errs = run(cmd, shell=True)
+
+            #########################
+            # 3. syncs and umount the raw image
+            #########################
+            cmd = "sync && sudo umount " + mountpoint
+            outs, errs = run(cmd, shell=True, timeout=15)
             if errs:
                 red(
-                    "Something went wrong while creating overlay ROS 2 workspace.\n"
+                    "Something went wrong while umounting the raw image.\n"
                     + "Review the output: "
                     + errs
                 )
                 sys.exit(1)
-
-        install_dir = get_install_dir(context.args.install_dir)
-        cmd = "sudo cp -r " + install_dir + "/* " + mountpoint + "/ros2_ws"
-        outs, errs = run(cmd, shell=True)
-        if errs:
-            red(
-                "Something went wrong while copying overlay ROS 2 workspace to mountpoint.\n"
-                + "Review the output: "
-                + errs
-            )
-            sys.exit(1)
-        green(
-            "- Copied '"
-            + context.args.install_dir
-            + "' directory as a ROS 2 overlay workspace in the raw image."
-        )
-
-        #########################
-        # 3. syncs and umount the raw image
-        #########################
-        cmd = "sync && sudo umount " + mountpoint
-        outs, errs = run(cmd, shell=True, timeout=15)
-        if errs:
-            red(
-                "Something went wrong while umounting the raw image.\n"
-                + "Review the output: "
-                + errs
-            )
-            sys.exit(1)
-        green("- Umounted the raw image.")
+            green("- Umounted the raw image.")
 
         #########################
         # 4. generates emulation files on-the-go
@@ -447,7 +455,7 @@ class EmulationSubverb(AccelerationSubverbExtensionPoint):
             + rawimage_path
             + " -enable-prep-target $*"
         )
-        # print(cmd)
+        print(cmd)
         os.system(cmd)
         green("Finalized successfully.")
 
