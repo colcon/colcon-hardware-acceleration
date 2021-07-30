@@ -8,7 +8,8 @@
 #  \   \  /  \
 #   \___\/\___\
 #
-
+# Licensed under the Apache License, Version 2.0
+# 
 import sys
 
 from colcon_core.plugin_system import satisfies_version

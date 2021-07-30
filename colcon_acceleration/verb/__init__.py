@@ -8,7 +8,8 @@
 #  \   \  /  \
 #   \___\/\___\
 #
-
+# Licensed under the Apache License, Version 2.0
+# 
 
 def black(text):
     print("\033[30m", text, "\033[0m", sep="")
