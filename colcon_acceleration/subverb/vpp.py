@@ -27,7 +27,7 @@ from colcon_acceleration.verb import yellow, red
 
 
 class VppSubverb(AccelerationSubverbExtensionPoint):
-    """Xilinx Vitis v++ compiler command.
+    """Vitis v++ compiler wrapper.
 
     TODO: Document build process with v++. Document environmental variables
 

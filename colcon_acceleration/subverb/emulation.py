@@ -28,7 +28,7 @@ from colcon_acceleration.verb import green, yellow, red
 
 
 class EmulationSubverb(AccelerationSubverbExtensionPoint):
-    """Xilinx Vitis emulation capabilities extension.
+    """Manage emulation capabilities.
 
     This extension does the following:
         1. verifies that the `<workspace>/install/` directory exists in the workspace.

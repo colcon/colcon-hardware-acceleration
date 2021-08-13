@@ -31,7 +31,7 @@ from colcon_acceleration.subverb import (
 from colcon_acceleration.verb import green, yellow, red, gray
 
 
-## No Xen, simple kernel and rootfs-based
+## No Xen, simple Linux kernel and rootfs-based
 TEMPLATE_CONFIG = """\
 MEMORY_START=0x0
 MEMORY_END=0x80000000
@@ -44,13 +44,13 @@ NUM_DOMUS=0
 """
 
 
-class KernelSubverb(AccelerationSubverbExtensionPoint):
+class LinuxSubverb(AccelerationSubverbExtensionPoint):
     """
-    Configure the Linux kernel type.
+    Configure the Linux kernel
 
     Typical use is as follows:
-    - "colcon acceleration kernel vanilla": select vanilla kernel
-    - "colcon acceleration kernel preempt_rt": select low latency, fully preemptible kernel
+    - "colcon acceleration linux vanilla": select vanilla Linux kernel
+    - "colcon acceleration linux preempt_rt": select low latency, fully preemptible Linux kernel
     """
 
     def __init__(self):  # noqa: D107
@@ -96,7 +96,7 @@ class KernelSubverb(AccelerationSubverbExtensionPoint):
 
     def replace_kernel(self, kernel_filename):
         """
-        Mount sd_card disk image in the workspace and replace kernel according
+        Mount sd_card disk image in the workspace and replace Linux kernel according
         to argument kernel_filename.
 
         NOTE: Refer to get_sdcard_img_dir() function for the location of

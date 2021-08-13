@@ -33,7 +33,7 @@ from colcon_acceleration.verb import green, yellow, red, greeninline \
 
 
 class HLSSubverb(AccelerationSubverbExtensionPoint):
-    """Xilinx Vitis HLS capabilities extension.
+    """Vitis HLS capabilities management extension.
 
     NOTE: Default behavior of this subverb is to show the HLS "status"
 
