@@ -428,7 +428,7 @@ class LinuxSubverb(AccelerationSubverbExtensionPoint):
             + "/sd_card.img "
             + "-s 500"
         )
-        outs, errs = run(cmd, shell=True)
+        outs, errs = run(cmd, shell=True, timeout=60)
         if errs:
             red(
                 "Something went wrong while creating sd card image.\n"
@@ -459,7 +459,7 @@ class LinuxSubverb(AccelerationSubverbExtensionPoint):
         # customize based on args
         #####################
         # now adapt image to the arguments passed
-        if context.args.type == "vanilla":
+        if context.args.type == "vanilla" or not context.args.type:
             # mount p1
             rawimage_path = get_rawimage_path("sd_card.img")
             mount_rawimage(rawimage_path, 1)
@@ -488,9 +488,6 @@ class LinuxSubverb(AccelerationSubverbExtensionPoint):
 
             # umount raw disk image, (technically, only p1)
             umount_rawimage(1)
-        else:
-            print(self.parser.format_usage())
-            return "Error: No type provided"
 
         #####################
         # copy workspace to image
