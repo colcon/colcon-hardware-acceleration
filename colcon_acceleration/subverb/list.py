@@ -17,9 +17,27 @@ import os
 
 from colcon_core.plugin_system import satisfies_version
 from colcon_acceleration.subverb import (
-    AccelerationSubverbExtensionPoint,    
+    AccelerationSubverbExtensionPoint,
+    get_firmware_dir,
+    run,
 )
 from colcon_acceleration import __version__
+from colcon_acceleration.verb import green, yellow, red
+
+
+def get_firmware_options():
+    """Search the workspace for firmware options
+    
+    Looks into "acceleration/firmware"        
+    """
+    current_dir = os.environ.get("PWD", "")
+    firmware_dir = current_dir + "/acceleration/firmware"
+    cmd = "ls " + firmware_dir
+    outs, errs = run(cmd, shell=True)
+
+    firmware_options = outs.split("\n")
+    if "select" in firmware_options: firmware_options.remove("select")
+    return firmware_options
 
 
 class ListSubverb(AccelerationSubverbExtensionPoint):
@@ -29,5 +47,24 @@ class ListSubverb(AccelerationSubverbExtensionPoint):
         super().__init__()
         satisfies_version(AccelerationSubverbExtensionPoint.EXTENSION_POINT_VERSION, "^1.0")
 
-    def main(self, *, context):  # noqa: D102        
-        raise NotImplementedError("Not implemented.")
+
+    def main(self, *, context):  # noqa: D102
+        firmware_dir = get_firmware_dir()
+        firmware_options = get_firmware_options()
+        target_firmware_dir = os.readlink(firmware_dir).split("/")[-1]
+        if firmware_dir:            
+            for firm in firmware_options:
+                if firm == target_firmware_dir:
+                    green(firm + "*")
+                else:
+                    print(firm)
+                
+                # TODO: analyze each firmware directory and obtain more data
+                #   from the files directly, maybe with --verbose option.
+                #
+                # Another approach could be to maintain a table including the
+                #   support level of each firmware. This should be easier to 
+                #   maintain and also more consistent with the REP.
+
+        else:            
+            red('Select firmware first with "colcon acceleraction select '+ str(firmware_options) +'".')

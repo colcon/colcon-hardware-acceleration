@@ -63,7 +63,7 @@ class AccelerationSubverbExtensionPoint:
 
     def get_board(self):
         """
-        Get the board of the acceleration/firmware/xilinx/ deployment.
+        Get the board of the acceleration/firmware/select/ deployment.
         Reads BOARD file and returns it as a string.
 
         NOTE: firmware is board-specific. Consult the README of
@@ -73,7 +73,7 @@ class AccelerationSubverbExtensionPoint:
         :rtype: String
         """
         current_dir = os.environ.get("PWD", "")
-        board_file = current_dir + "/acceleration/firmware/xilinx/BOARD"
+        board_file = current_dir + "/acceleration/firmware/select/BOARD"
         if os.path.exists(board_file):
             with open(board_file, "r") as myfile:
                 data = myfile.readlines()
@@ -89,7 +89,7 @@ class AccelerationSubverbExtensionPoint:
 
     def get_platform(self):
         """
-        Get the board of the acceleration/firmware/xilinx/ deployment.
+        Get the board of the acceleration/firmware/select/ deployment.
         Reads BOARD file and returns it as a string.
 
         NOTE: firmware is board-specific. Consult the README of
@@ -220,7 +220,7 @@ def get_build_dir():
 
 def get_firmware_dir():
     """
-    Get the path to the Xilinx firmware deployed software
+    Get the path to the firmware
 
     NOTE: firmware is board-specific. Consult the README and/or change
     branch as per your hardware/board requirements.
@@ -228,23 +228,25 @@ def get_firmware_dir():
     :rtype: String
     """
     current_dir = os.environ.get("PWD", "")
-    firmware_dir = current_dir + "/acceleration/firmware/xilinx"
+    firmware_dir = current_dir + "/acceleration/firmware/select"
     if os.path.exists(firmware_dir):
         return firmware_dir
     else:
-        raise FileNotFoundError(
-            firmware_dir,
-            "consider running "
-            + "this command from the root directory of the workspace "
-            + "after xilinx's firmware has been deployed. \n"
-            + "Try 'colcon build --merge-install' first.",
-        )
+        # raise FileNotFoundError(
+        #     firmware_dir,
+        #     "consider running "
+        #     + "this command from the root directory of the workspace "
+        #     + "after firmware has been deployed. \n"
+        #     + "Try 'colcon build --merge-install' first.",
+        # )
+        red("Firmware directory (" + firmware_dir + ") not found.")
+        return None
 
 
 def get_platform_dir():
     """
-    Get the path to the Xilinx hardware platform deployed software. Usually
-    lives within "<ros2_ws>/acceleration/firmware/xilinx/platform".
+    Get the path to the hardware platform deployed software. Usually
+    lives within "<ros2_ws>/acceleration/firmware/select/platform".
 
     NOTE: platform is board-specific. Consult the README and/or change
     branch as per your hardware/board requirements.
@@ -252,7 +254,7 @@ def get_platform_dir():
     :rtype: String
     """
     current_dir = os.environ.get("PWD", "")
-    platform_dir = current_dir + "/acceleration/firmware/xilinx/platform"
+    platform_dir = current_dir + "/acceleration/firmware/select/platform"
     if os.path.exists(platform_dir):
         return platform_dir
     else:
@@ -260,7 +262,7 @@ def get_platform_dir():
             platform_dir,
             "consider running "
             + "this command from the root directory of the workspace "
-            + "after xilinx's firmware has been deployed. \n"
+            + "after firmware has been deployed. \n"
             + "Try 'colcon build --merge-install' first.",
         )
 
@@ -307,7 +309,7 @@ def get_rawimage_path(rawimage_filename="sd_card.img"):
     firmware directory if exists, None otherwise.
 
     Image is meant for both hardware and emulation. It usually lives in
-    "<ros2_ws>/acceleration/firmware/xilinx/sd_card.img".
+    "<ros2_ws>/acceleration/firmware/select/sd_card.img".
 
     :rtype: String
     """
@@ -376,7 +378,7 @@ def mount_rawimage(rawimage_path, partition=1, debug=False):
         red(
             "raw image file not found. Consider running "
             + "this command from the root directory of the workspace and build "
-            + "the workspace first so that Xilinx packages deploy automatically "
+            + "the workspace first so that packages deploy automatically "
             + "the image."
         )
         sys.exit(1)
