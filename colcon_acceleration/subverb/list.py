@@ -51,8 +51,8 @@ class ListSubverb(AccelerationSubverbExtensionPoint):
     def main(self, *, context):  # noqa: D102
         firmware_dir = get_firmware_dir()
         firmware_options = get_firmware_options()
-        target_firmware_dir = os.readlink(firmware_dir).split("/")[-1]
         if firmware_dir:            
+            target_firmware_dir = os.readlink(firmware_dir).split("/")[-1]
             for firm in firmware_options:
                 if firm == target_firmware_dir:
                     green(firm + "*")
