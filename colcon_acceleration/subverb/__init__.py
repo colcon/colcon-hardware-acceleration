@@ -635,7 +635,7 @@ def copy_ros2_workspace(install_dir):  # noqa: D102
             "workspace "
             + install_dir
             + " directory not found. Consider running "
-            + "this command from the root directory of the workspace and build"
+            + "this command from the root directory of the workspace and build "
             + "the workspace first"
         )
         sys.exit(1)
@@ -649,8 +649,8 @@ def copy_ros2_workspace(install_dir):  # noqa: D102
     if not rawimage_path:
         red(
             "raw image file not found. Consider running "
-            + "this command from the root directory of the workspace and build"
-            + "the workspace first so that Xilinx packages deploy automatically"
+            + "this command from the root directory of the workspace and build "
+            + "the workspace first so that Xilinx packages deploy automatically "
             + "the image."
         )
         sys.exit(1)
