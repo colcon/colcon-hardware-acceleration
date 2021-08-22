@@ -471,6 +471,7 @@ class HLSSubverb(AccelerationSubverbExtensionPoint):
         ########
         if context.args.summary:
             for tcl in package_paths_tcl:
+                gray("# " + str(tcl))  # print which project, differentiate when multiple available
                 configuration = self.process_tcl(tcl)
                 solutions = configuration["solutions"]
                 if len(solutions) > 0:
