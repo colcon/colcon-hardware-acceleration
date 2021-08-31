@@ -31,6 +31,7 @@ from colcon_acceleration.subverb import (
     add_kernel,
     exists,
     copy_ros2_workspace,
+    copy_libstdcppfs
 )
 from colcon_acceleration.verb import green, yellow, red, gray
 
@@ -844,7 +845,7 @@ class HypervisorSubverb(AccelerationSubverbExtensionPoint):
             )
             if context.args.debug:
                 gray(cmd)
-            outs, errs = run(cmd, shell=True)
+            outs, errs = run(cmd, shell=True, timeout=300)
             if errs:
                 red(
                     "Something went wrong while creating sd card image.\n"
@@ -900,11 +901,13 @@ class HypervisorSubverb(AccelerationSubverbExtensionPoint):
                 # creates missing tmp dirs for Xen proper functioning, configures /etc/inittab, etc.
                 # TODO: review this overtime in case PetaLinux output becomes differently
                 self.xen_fixes(partition=2)
+                copy_libstdcppfs(partition=2)  # FIXME: copy missing libstdc++fs library
 
             # apply fixes also to every domU
             if context.args.domU_args:
                 for i in range(len(context.args.domU_args)):
                     self.xen_fixes(partition=i + 2 + 1)
+                    copy_libstdcppfs(partition=i + 2 + 1)  # FIXME: copy missing libstdc++fs library
 
             # cleanup auxdir
             if not context.args.debug:

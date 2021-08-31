@@ -27,6 +27,7 @@ from colcon_acceleration.subverb import (
     mountpoint1,
     exists,
     copy_ros2_workspace,
+    copy_libstdcppfs
 )
 from colcon_acceleration.verb import green, yellow, red, gray
 
@@ -494,3 +495,9 @@ class LinuxSubverb(AccelerationSubverbExtensionPoint):
         #####################
         if context.args.install_dir:
             copy_ros2_workspace(context.args.install_dir)
+
+        #####################
+        # Fixes in rootfs
+        #####################
+        # Add libstdc++fs.a
+        copy_libstdcppfs()

@@ -795,3 +795,21 @@ def copy_ros2_workspace(install_dir):  # noqa: D102
         )
         sys.exit(1)
     green("- Umounted the raw image.")
+
+
+def copy_libstdcppfs(partition=2):  # noqa: D102
+    """
+    Copy libstdc++fs.a into rootfs
+
+    return: None
+    """
+
+    rawimage_path = get_rawimage_path("sd_card.img")
+    mount_rawimage(rawimage_path, partition)
+
+    firmware_dir = get_firmware_dir()
+    cmd = "sudo cp -r " + firmware_dir + "/lib/libstdc++fs.a " + mountpointn + str(partition) + "/usr/lib/libstdc++fs.a"
+    outs, errs = run(cmd, shell=True)
+    
+    # umount raw disk image
+    umount_rawimage(partition)
