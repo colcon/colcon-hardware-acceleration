@@ -269,11 +269,14 @@ class HLSSubverb(AccelerationSubverbExtensionPoint):
         green("Run") if "evaluate_done" in project_status else yellow("Not Run")
 
         if context.args.synthesis_report:
-            gray("\t\t- Synthesis report: " + csyn_path )
-            with open(csyn_path,'r') as f:
-                report = f.readlines()
-                for l in report:
-                    grayinline("\t\t\t" + l)
+            if os.path.exists(csyn_path):
+                gray("\t\t- Synthesis report: " + csyn_path )
+                with open(csyn_path,'r') as f:
+                    report = f.readlines()
+                    for l in report:
+                        grayinline("\t\t\t" + l)
+            else:
+                red("\t\t- No synthesis report found at: " + csyn_path )
 
         # # NOTE: replaced by --synthesis-report instead
         # try:
