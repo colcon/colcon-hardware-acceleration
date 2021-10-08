@@ -12,6 +12,7 @@ Changelog for package colcon_acceleration
 0.1.0 (2021-09-07)
 ------------------
 * Include initial capabilities. Verbs available initially:
+
   * board                 Report the board supported in the deployed firmware
   * emulation             Manage emulation capabilities
   * hls                   Vitis HLS capabilities management extension
