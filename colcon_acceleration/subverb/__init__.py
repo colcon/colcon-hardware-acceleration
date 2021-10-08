@@ -9,7 +9,7 @@
 #   \___\/\___\
 #
 # Licensed under the Apache License, Version 2.0
-# 
+#
 import os
 import subprocess
 import sys
@@ -323,12 +323,14 @@ def get_rawimage_path(rawimage_filename="sd_card.img"):
 
 def run(cmd, shell=False, timeout=1):
     """
-    Spawns a new processe launching cmd, connect to their input/output/error pipes, and obtain their return codes.
+    Spawns a new process launching cmd, connect to their input/output/error pipes, and obtain their return codes.
 
     :param cmd: command split in the form of a list
     :returns: stdout
     """
-    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=shell)
+    proc = subprocess.Popen(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=shell
+    )
     try:
         outs, errs = proc.communicate(timeout=timeout)
     except subprocess.TimeoutExpired:
@@ -341,14 +343,16 @@ def run(cmd, shell=False, timeout=1):
     else:
         outs = None
 
-    if errs:
+    if errs and proc.returncode:
         errs = errs.decode("utf-8").strip()
     else:
         errs = None
 
-    # # debug
+    # # # debug
+    # print(cmd)
     # gray(outs)
     # red(errs)
+    # red("returncode: " + str(proc.returncode))
 
     return outs, errs
 
@@ -808,8 +812,15 @@ def copy_libstdcppfs(partition=2):  # noqa: D102
     mount_rawimage(rawimage_path, partition)
 
     firmware_dir = get_firmware_dir()
-    cmd = "sudo cp -r " + firmware_dir + "/lib/libstdc++fs.a " + mountpointn + str(partition) + "/usr/lib/libstdc++fs.a"
+    cmd = (
+        "sudo cp -r "
+        + firmware_dir
+        + "/lib/libstdc++fs.a "
+        + mountpointn
+        + str(partition)
+        + "/usr/lib/libstdc++fs.a"
+    )
     outs, errs = run(cmd, shell=True)
-    
+
     # umount raw disk image
     umount_rawimage(partition)

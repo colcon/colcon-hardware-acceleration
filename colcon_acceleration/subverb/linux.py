@@ -342,9 +342,10 @@ class LinuxSubverb(AccelerationSubverbExtensionPoint):
             sys.exit(1)
 
         yellow("- Creating a new base image using " + rootfs + " ...")
+
         # re-using hypervisor tools, create a reference image
         auxdir = "/tmp/kernel"
-        run("mkdir " + auxdir, shell=True, timeout=1)
+        run("mkdir -p " + auxdir, shell=True, timeout=1)
 
         # save last image, delete rest
         if exists(firmware_dir + "/sd_card.img"):
@@ -443,6 +444,7 @@ class LinuxSubverb(AccelerationSubverbExtensionPoint):
                 + errs
             )
             sys.exit(1)
+
         green("- Image successfully created")
 
         # permissions of the newly created image
