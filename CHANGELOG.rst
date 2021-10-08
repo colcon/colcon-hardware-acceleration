@@ -1,6 +1,14 @@
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Changelog for package colcon_acceleration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+0.2.0 (2021-10-08)
+------------------
+* Enhance README demonstrating some of the capabilities
+* Add no quality declaration according to REPs
+* Check that rootfs exists after selection
+* Fixes in run() primitive used throughout subverbs
+
 0.1.0 (2021-09-07)
 ------------------
 * Include initial capabilities. Verbs available initially:
