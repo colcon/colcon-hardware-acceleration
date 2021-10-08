@@ -9,7 +9,7 @@
 #   \___\/\___\
 #
 # Licensed under the Apache License, Version 2.0
-# 
+#
 import os
 import sys
 import errno
@@ -27,7 +27,7 @@ from colcon_acceleration.subverb import (
     mountpoint1,
     exists,
     copy_ros2_workspace,
-    copy_libstdcppfs
+    copy_libstdcppfs,
 )
 from colcon_acceleration.verb import green, yellow, red, gray
 
@@ -56,7 +56,9 @@ class LinuxSubverb(AccelerationSubverbExtensionPoint):
 
     def __init__(self):  # noqa: D107
         super().__init__()
-        satisfies_version(AccelerationSubverbExtensionPoint.EXTENSION_POINT_VERSION, "^1.0")
+        satisfies_version(
+            AccelerationSubverbExtensionPoint.EXTENSION_POINT_VERSION, "^1.0"
+        )
 
     def add_arguments(self, *, parser):  # noqa: D102
         argument = parser.add_argument(
@@ -334,6 +336,10 @@ class LinuxSubverb(AccelerationSubverbExtensionPoint):
                 rootfs = firmware_dir + "/rootfs.cpio.gz"
         else:
             rootfs = firmware_dir + "/rootfs.cpio.gz"
+
+        if not exists(rootfs):
+            red("Rootfs at " + rootfs + " not found.")
+            sys.exit(1)
 
         yellow("- Creating a new base image using " + rootfs + " ...")
         # re-using hypervisor tools, create a reference image
