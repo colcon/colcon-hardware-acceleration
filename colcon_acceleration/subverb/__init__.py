@@ -390,7 +390,7 @@ def mount_rawimage(rawimage_path, partition=1, debug=False):
 
     # fetch UNITS
     units = None
-    cmd = "fdisk -l " + rawimage_path + " | grep "[Units|Unidades]" | awk '{print $8}'"
+    cmd = "fdisk -l " + rawimage_path + " | grep '[Units|Unidades]' | awk '{print $8}'"
     outs, errs = run(cmd, shell=True)
     if outs:
         units = int(outs)
