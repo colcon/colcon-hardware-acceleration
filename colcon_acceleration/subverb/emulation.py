@@ -9,7 +9,7 @@
 #   \___\/\___\
 #
 # Licensed under the Apache License, Version 2.0
-# 
+#
 import os
 import sys
 
@@ -23,6 +23,7 @@ from colcon_acceleration.subverb import (
     get_firmware_dir,
     get_vitis_dir,
     get_vivado_dir,
+    get_workspace_dir,
 )
 from colcon_acceleration.verb import green, yellow, red
 
@@ -34,13 +35,13 @@ class EmulationSubverb(AccelerationSubverbExtensionPoint):
         1. verifies that the `<workspace>/install/` directory exists in the workspace.
             Resulting from past build processes.
         2. mounts p2 of the embedded raw image ("sd_card.img" file) available in deployed firmware
-            and deploys the `<workspace>/install/` directory under "/ros2_ws" in the rootfs.
+            and deploys the `<workspace>/install/` directory under "/<workspace-name>" in the rootfs.
         3. syncs and umount the raw image
         4. generates emulation files on the go
         5. launches emulator
 
     NOTE: The install/ directory in the workspace will be copied to
-        "/ros2_ws" in the image.
+        "/<workspace-name>" in the image.
 
     NOTE 2: This class invokes explicitly a shell via shell=True of the Python subprocess library and uses admin,
     privileges to manage raw disk images. Tt is the user's responsibility to ensure that all whitespace and
@@ -49,7 +50,9 @@ class EmulationSubverb(AccelerationSubverbExtensionPoint):
 
     def __init__(self):  # noqa: D107
         super().__init__()
-        satisfies_version(AccelerationSubverbExtensionPoint.EXTENSION_POINT_VERSION, "^1.0")
+        satisfies_version(
+            AccelerationSubverbExtensionPoint.EXTENSION_POINT_VERSION, "^1.0"
+        )
 
     def add_arguments(self, *, parser):  # noqa: D102
         parser.description += (
@@ -84,9 +87,10 @@ class EmulationSubverb(AccelerationSubverbExtensionPoint):
             default="install",
             help="relative path to the workspace directory to deploy in emulation (typically 'install-*').",
         )
-        argument = parser.add_argument("--no-install", 
-            action="store_true", 
-            default=False, 
+        argument = parser.add_argument(
+            "--no-install",
+            action="store_true",
+            default=False,
             help="Do not copy install_dir (or default) to second partition",
             dest="no_install",
         )
@@ -176,7 +180,7 @@ class EmulationSubverb(AccelerationSubverbExtensionPoint):
 
     def gen_qemufile_kv260(self, emulation_files_dir, emulation_file_qemu):
         """
-        Generate emulation arguments file for virtualizing the PS/PL side of the KV260, 
+        Generate emulation arguments file for virtualizing the PS/PL side of the KV260,
         if it doesn't exist previously.
 
         NOTE: If files exists, does nothing. This allows developers to iterate/
@@ -186,19 +190,42 @@ class EmulationSubverb(AccelerationSubverbExtensionPoint):
         :param: emulation_file_qemu: path of the file to create
         """
         if not os.path.exists(emulation_file_qemu):
-            
+
             file_str = "-M arm-generic-fdt\n"
             file_str += "-serial /dev/null -serial mon:stdio -display none" + "\n"
-            file_str += "-device loader,file=" + emulation_files_dir + "/../bl31.elf,cpu-num=0" + "\n"
+            file_str += (
+                "-device loader,file="
+                + emulation_files_dir
+                + "/../bl31.elf,cpu-num=0"
+                + "\n"
+            )
             # file_str += "-device loader,file=" + emulation_files_dir + "/../ramdisk.cpio.gz.u-boot,addr=0x04000000,force-raw" + "\n"
-            file_str += "-device loader,file=" + emulation_files_dir + "/../u-boot.elf" + "\n"
+            file_str += (
+                "-device loader,file=" + emulation_files_dir + "/../u-boot.elf" + "\n"
+            )
             # file_str += "-device loader,file=" + emulation_files_dir + "/../kernel/Image,addr=0x00200000,force-raw" + "\n"
-            file_str += "-device loader,file=" + emulation_files_dir + "/../device_tree/u-boot.dtb,addr=0x00100000,force-raw" + "\n"
+            file_str += (
+                "-device loader,file="
+                + emulation_files_dir
+                + "/../device_tree/u-boot.dtb,addr=0x00100000,force-raw"
+                + "\n"
+            )
             file_str += "-gdb tcp::9000" + "\n"
             # file_str += "-net nic -net nic -net nic -net nic,netdev=eth0 -netdev user,id=eth0,tftp=/tftpboot" + "\n"
-            file_str += "-net nic -net nic -net nic -net nic -net user,hostfwd=tcp:127.0.0.1:2222-10.0.2.15:22" + "\n"
-            file_str += "-hw-dtb " + emulation_files_dir + "/../zynqmp-qemu-multiarch-arm.dtb" + "\n"
-            file_str += "-global xlnx,zynqmp-boot.cpu-num=0 -global xlnx,zynqmp-boot.use-pmufw=true" + "\n"
+            file_str += (
+                "-net nic -net nic -net nic -net nic -net user,hostfwd=tcp:127.0.0.1:2222-10.0.2.15:22"
+                + "\n"
+            )
+            file_str += (
+                "-hw-dtb "
+                + emulation_files_dir
+                + "/../zynqmp-qemu-multiarch-arm.dtb"
+                + "\n"
+            )
+            file_str += (
+                "-global xlnx,zynqmp-boot.cpu-num=0 -global xlnx,zynqmp-boot.use-pmufw=true"
+                + "\n"
+            )
             file_str += "-m 4G" + "\n"
 
             f = open(emulation_file_qemu, "w")
@@ -246,12 +273,16 @@ class EmulationSubverb(AccelerationSubverbExtensionPoint):
 
         #########################
         # 2. mounts the embedded raw image ("sd_card.img" file) available in deployed firmware
-        #     and deploys the `<workspace>/install/` directory under "/ros2_ws" in the rootfs.
+        #     and deploys the `<workspace>/install/` directory under "/<workspace-name>" in the rootfs.
         #########################
         if not context.args.no_install:
             # fetch UNITS
             units = None
-            cmd = "fdisk -l " + rawimage_path + " | grep 'Units\|Unidades' | awk '{print $8}'"
+            cmd = (
+                "fdisk -l "
+                + rawimage_path
+                + " | grep 'Units\|Unidades' | awk '{print $8}'"
+            )
             outs, errs = run(cmd, shell=True)
             if outs:
                 units = int(outs)
@@ -292,7 +323,9 @@ class EmulationSubverb(AccelerationSubverbExtensionPoint):
                     else "None"
                 )
                 sys.exit(1)
-            green("- Finished inspecting raw image, obtained UNITS and STARTSECTOR P1/P2")
+            green(
+                "- Finished inspecting raw image, obtained UNITS and STARTSECTOR P1/P2"
+            )
 
             # define mountpoint and mount
             mountpoint = "/tmp/sdcard_img_p2"
@@ -321,14 +354,19 @@ class EmulationSubverb(AccelerationSubverbExtensionPoint):
                 cmd, shell=True, timeout=15
             )  # longer timeout, allow user to input password
             if errs:
-                red("Something went wrong while mounting.\n" + "Review the output: " + errs)
+                red(
+                    "Something went wrong while mounting.\n"
+                    + "Review the output: "
+                    + errs
+                )
                 sys.exit(1)
             green("- Image mounted successfully at: " + mountpoint)
 
-            # remove prior overlay ROS 2 workspace files at "/ros2_ws",
+            workspace_dir = get_workspace_dir()
+            # remove prior overlay ROS 2 workspace files at "/<workspace_dir>",
             #  and copy the <ws>/install directory as such
-            if os.path.exists(mountpoint + "/ros2_ws"):
-                cmd = "sudo rm -r " + mountpoint + "/ros2_ws/*"
+            if os.path.exists(mountpoint + "/" + workspace_dir):
+                cmd = "sudo rm -r " + mountpoint + "/" + workspace_dir + "/*"
                 outs, errs = run(cmd, shell=True)
                 if errs:
                     red(
@@ -341,16 +379,19 @@ class EmulationSubverb(AccelerationSubverbExtensionPoint):
                     "- Successfully cleaned up prior overlay ROS 2 workspace "
                     + "at: "
                     + mountpoint
-                    + "/ros2_ws"
+                    + "/"
+                    + workspace_dir
                 )
             else:
                 yellow(
                     "No prior overlay ROS 2 workspace found "
                     + "at: "
                     + mountpoint
-                    + "/ros2_ws, creating it."
+                    + "/"
+                    + workspace_dir
+                    + ", creating it."
                 )
-                cmd = "sudo mkdir " + mountpoint + "/ros2_ws"
+                cmd = "sudo mkdir " + mountpoint + "/" + workspace_dir
                 outs, errs = run(cmd, shell=True)
                 if errs:
                     red(
@@ -361,7 +402,7 @@ class EmulationSubverb(AccelerationSubverbExtensionPoint):
                     sys.exit(1)
 
             install_dir = get_install_dir(context.args.install_dir)
-            cmd = "sudo cp -r " + install_dir + "/* " + mountpoint + "/ros2_ws"
+            cmd = "sudo cp -r " + install_dir + "/* " + mountpoint + "/" + workspace_dir
             outs, errs = run(cmd, shell=True)
             if errs:
                 red(
@@ -439,7 +480,7 @@ class EmulationSubverb(AccelerationSubverbExtensionPoint):
         vitis_dir = get_vitis_dir()
         firmware_dir = get_firmware_dir()
         emulation_files_dir = firmware_dir + "/emulation"
-        
+
         cmd = (
             "cd "
             + emulation_files_dir

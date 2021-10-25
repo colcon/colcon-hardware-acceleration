@@ -117,6 +117,41 @@ def get_subverb_extensions():
     return order_extensions_by_name(extensions)
 
 
+def get_workspace_path():
+    """
+    Get the path to the current ROS 2 workspace
+
+    :rtype: String
+    """
+    current_dir = os.environ.get("PWD", "")
+    if os.path.exists(current_dir) and os.path.exists(current_dir + "/src"):
+        return current_dir
+    else:
+        raise FileNotFoundError(
+            current_dir,
+            "consider running "
+            + "this command from the root directory of the ROS 2 workspace ",
+        )
+
+
+def get_workspace_dir():
+    """
+    Get the name to the current ROS 2 workspace
+
+    :rtype: String
+    """
+    current_dir = os.environ.get("PWD", "")
+    workspace_dir = current_dir.split("/")[-1]
+    if os.path.exists(workspace_dir) and os.path.exists(workspace_dir + "/src"):
+        return workspace_dir
+    else:
+        raise FileNotFoundError(
+            workspace_dir,
+            "consider running "
+            + "this command from the root directory of the ROS 2 workspace ",
+        )
+
+
 def get_vitis_dir():
     """
     Get the path to the Vitis deployed software.
@@ -246,7 +281,7 @@ def get_firmware_dir():
 def get_platform_dir():
     """
     Get the path to the hardware platform deployed software. Usually
-    lives within "<ros2_ws>/acceleration/firmware/select/platform".
+    lives within "<path-to-ros2-ws>/acceleration/firmware/select/platform".
 
     NOTE: platform is board-specific. Consult the README and/or change
     branch as per your hardware/board requirements.
@@ -309,7 +344,7 @@ def get_rawimage_path(rawimage_filename="sd_card.img"):
     firmware directory if exists, None otherwise.
 
     Image is meant for both hardware and emulation. It usually lives in
-    "<ros2_ws>/acceleration/firmware/select/sd_card.img".
+    "<path-to-ros2-ws>/acceleration/firmware/select/sd_card.img".
 
     :rtype: String
     """
@@ -619,8 +654,7 @@ def copy_ros2_workspace(install_dir):  # noqa: D102
     """
     Prepare the emulation
 
-    param: context: superclass context containing arguments, etc.
-    return: emulation_file_qemu, emulation_file_pmu, rawimage_path
+    param: install_dir: path to the directory to install
     """
 
     # Add a security warning
@@ -647,7 +681,7 @@ def copy_ros2_workspace(install_dir):  # noqa: D102
 
     #########################
     # 2. mounts the embedded raw image ("sd_card.img" file) available in deployed firmware
-    #     and deploys the `<workspace>/install/` directory under "/ros2_ws" in the rootfs.
+    #     and deploys the `<ros2-workspace>/<install_dir>/` directory under "/<ros2-workspace>" in the rootfs.
     #########################
     rawimage_path = get_rawimage_path()
     if not rawimage_path:
@@ -736,10 +770,11 @@ def copy_ros2_workspace(install_dir):  # noqa: D102
         sys.exit(1)
     green("- Image mounted successfully at: " + mountpoint)
 
-    # remove prior overlay ROS 2 workspace files at "/ros2_ws",
-    #  and copy the <ws>/install directory as such
-    if os.path.exists(mountpoint + "/ros2_ws"):
-        cmd = "sudo rm -r " + mountpoint + "/ros2_ws/*"
+    workspace_dir = get_workspace_dir()
+    # remove prior overlay ROS 2 workspace files at "/<workspace_dir>",
+    #  and copy the <ws>/<install_dir> directory as such
+    if os.path.exists(mountpoint + "/" + workspace_dir):
+        cmd = "sudo rm -r " + mountpoint + "/" + workspace_dir + "/*"
         outs, errs = run(cmd, shell=True)
         if errs:
             red(
@@ -752,16 +787,19 @@ def copy_ros2_workspace(install_dir):  # noqa: D102
             "- Successfully cleaned up prior overlay ROS 2 workspace "
             + "at: "
             + mountpoint
-            + "/ros2_ws"
+            + "/"
+            + workspace_dir
         )
     else:
         yellow(
             "No prior overlay ROS 2 workspace found "
             + "at: "
             + mountpoint
-            + "/ros2_ws, creating it."
+            + "/"
+            + workspace_dir
+            + ", creating it."
         )
-        cmd = "sudo mkdir " + mountpoint + "/ros2_ws"
+        cmd = "sudo mkdir " + mountpoint + "/" + workspace_dir
         outs, errs = run(cmd, shell=True)
         if errs:
             red(
@@ -771,7 +809,7 @@ def copy_ros2_workspace(install_dir):  # noqa: D102
             )
             sys.exit(1)
 
-    cmd = "sudo cp -r " + install_dir + "/* " + mountpoint + "/ros2_ws"
+    cmd = "sudo cp -r " + install_dir + "/* " + mountpoint + "/" + workspace_dir
     outs, errs = run(cmd, shell=True)
     if errs:
         red(
@@ -783,7 +821,10 @@ def copy_ros2_workspace(install_dir):  # noqa: D102
     green(
         "- Copied '"
         + install_dir
-        + "' directory as a ROS 2 overlay workspace in the raw image."
+        + "' directory as a ROS 2 overlay workspace in the raw image "
+        + " at location "
+        + "/"
+        + workspace_dir
     )
 
     #########################
