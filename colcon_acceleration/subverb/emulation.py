@@ -24,6 +24,7 @@ from colcon_acceleration.subverb import (
     get_vitis_dir,
     get_vivado_dir,
     get_workspace_dir,
+    create_ros2_overlay_script,
 )
 from colcon_acceleration.verb import green, yellow, red
 
@@ -273,7 +274,10 @@ class EmulationSubverb(AccelerationSubverbExtensionPoint):
 
         #########################
         # 2. mounts the embedded raw image ("sd_card.img" file) available in deployed firmware
-        #     and deploys the `<workspace>/install/` directory under "/<workspace-name>" in the rootfs.
+        #     and deploys the `<workspace>/install/` directory under "/<workspace-name>"
+        #     in the rootfs. Also, creates /opt/ros/foxy/setup.bash to facilitate transition.
+        #
+        # TODO: make setup.bash distro-agnostic
         #########################
         if not context.args.no_install:
             # fetch UNITS
@@ -414,7 +418,44 @@ class EmulationSubverb(AccelerationSubverbExtensionPoint):
             green(
                 "- Copied '"
                 + context.args.install_dir
-                + "' directory as a ROS 2 overlay workspace in the raw image."
+                + "' directory as a ROS 2 overlay workspace in the raw image"
+                + " at location: /"
+                + workspace_dir
+                + "."
+            )
+
+            # Create setup.bash and copy to mountpoint in target_dir
+            script_path = create_ros2_overlay_script()
+            target_dir_embedded = "/opt/ros/foxy/"
+            target_dir = mountpoint + target_dir_embedded
+
+            cmd = "sudo mkdir -p " + target_dir
+            outs, errs = run(cmd, shell=True)
+            if errs:
+                red(
+                    "Something went wrong while creating "
+                    + target_dir
+                    + ".\n"
+                    + "Review the output: "
+                    + errs
+                )
+                sys.exit(1)
+
+            cmd = "sudo cp " + script_path + " " + target_dir
+            outs, errs = run(cmd, shell=True)
+            if errs:
+                red(
+                    "Something went wrong while copying "
+                    + script_path
+                    + " to "
+                    + target_dir
+                    + ".\n"
+                    + "Review the output: "
+                    + errs
+                )
+                sys.exit(1)
+            green(
+                "- Created and copied in rootfs " + target_dir_embedded + "setup.bash."
             )
 
             #########################

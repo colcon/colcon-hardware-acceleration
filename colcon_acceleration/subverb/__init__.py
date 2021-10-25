@@ -142,7 +142,7 @@ def get_workspace_dir():
     """
     current_dir = os.environ.get("PWD", "")
     workspace_dir = current_dir.split("/")[-1]
-    if os.path.exists(workspace_dir) and os.path.exists(workspace_dir + "/src"):
+    if os.path.exists(current_dir) and os.path.exists(current_dir + "/src"):
         return workspace_dir
     else:
         raise FileNotFoundError(
@@ -681,7 +681,10 @@ def copy_ros2_workspace(install_dir):  # noqa: D102
 
     #########################
     # 2. mounts the embedded raw image ("sd_card.img" file) available in deployed firmware
-    #     and deploys the `<ros2-workspace>/<install_dir>/` directory under "/<ros2-workspace>" in the rootfs.
+    #     and deploys the `<workspace>/install/` directory under "/<workspace-name>"
+    #     in the rootfs. Also, creates /opt/ros/foxy/setup.bash to facilitate transition.
+    #
+    # TODO: make setup.bash distro-agnostic
     #########################
     rawimage_path = get_rawimage_path()
     if not rawimage_path:
@@ -827,6 +830,38 @@ def copy_ros2_workspace(install_dir):  # noqa: D102
         + workspace_dir
     )
 
+    # Create setup.bash and copy to mountpoint in target_dir
+    script_path = create_ros2_overlay_script()
+    target_dir_embedded = "/opt/ros/foxy/"
+    target_dir = mountpoint + target_dir_embedded
+
+    cmd = "sudo mkdir -p " + target_dir
+    outs, errs = run(cmd, shell=True)
+    if errs:
+        red(
+            "Something went wrong while creating "
+            + target_dir
+            + ".\n"
+            + "Review the output: "
+            + errs
+        )
+        sys.exit(1)
+
+    cmd = "sudo cp " + script_path + " " + target_dir
+    outs, errs = run(cmd, shell=True)
+    if errs:
+        red(
+            "Something went wrong while copying "
+            + script_path
+            + " to "
+            + target_dir
+            + ".\n"
+            + "Review the output: "
+            + errs
+        )
+        sys.exit(1)
+    green("- Created and copied in rootfs " + target_dir_embedded + "setup.bash.")
+
     #########################
     # 3. syncs and umount the raw image
     #########################
@@ -865,3 +900,30 @@ def copy_libstdcppfs(partition=2):  # noqa: D102
 
     # umount raw disk image
     umount_rawimage(partition)
+
+
+def create_ros2_overlay_script():  # noqa: D102
+    """
+    Creates common /opt/ros/foxy/setup.bash script on the go
+
+    return: path to the script just created under /tmp (/tmp/setup.bash)
+    """
+    workspace_dir = get_workspace_dir()
+    script_path = "/tmp/setup.bash"
+
+    content = """
+AMENT_SHELL=bash
+
+# source ROS 2 installation in Yocto-based rootfs
+source /usr/bin/ros_setup.bash
+
+# source ROS 2 overlay workspace
+"""
+    content += "source /" + workspace_dir + "/local_setup.bash"
+
+    script = open(script_path, "w")
+    script.truncate(0)  # delete previous content
+    script.write(content)
+    script.close()
+
+    return script_path
