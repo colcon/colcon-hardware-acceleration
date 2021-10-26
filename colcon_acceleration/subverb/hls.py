@@ -9,13 +9,12 @@
 #   \___\/\___\
 #
 # Licensed under the Apache License, Version 2.0
-# 
+#
 import os
 import sys
 
 from colcon_core.package_discovery import discover_packages
-from colcon_core.package_identification \
-    import get_package_identification_extensions
+from colcon_core.package_identification import get_package_identification_extensions
 from colcon_core.plugin_system import satisfies_version
 from colcon_acceleration.subverb import (
     AccelerationSubverbExtensionPoint,
@@ -26,10 +25,19 @@ from colcon_acceleration.subverb import (
     get_firmware_dir,
     get_vitis_dir,
     get_vivado_dir,
-    exists
+    exists,
 )
-from colcon_acceleration.verb import green, yellow, red, greeninline \
-    ,redinline, yellowinline, grayinline, magenta, gray
+from colcon_acceleration.verb import (
+    green,
+    yellow,
+    red,
+    greeninline,
+    redinline,
+    yellowinline,
+    grayinline,
+    magenta,
+    gray,
+)
 
 
 class HLSSubverb(AccelerationSubverbExtensionPoint):
@@ -46,27 +54,36 @@ class HLSSubverb(AccelerationSubverbExtensionPoint):
 
     def __init__(self):  # noqa: D107
         super().__init__()
-        satisfies_version(AccelerationSubverbExtensionPoint.EXTENSION_POINT_VERSION, "^1.0")
+        satisfies_version(
+            AccelerationSubverbExtensionPoint.EXTENSION_POINT_VERSION, "^1.0"
+        )
 
     def add_arguments(self, *, parser):  # noqa: D102
 
         argument = parser.add_argument(
             "package_name",
-            nargs="?",         
-            help='Name of the package whereto run HLS',
+            nargs="?",
+            help="Name of the package whereto run HLS",
         )
         argument = parser.add_argument("--verbose", dest="verbose", action="store_true")
-        argument = parser.add_argument("--summary", dest="summary", action="store_true")        
-        argument = parser.add_argument("--run", dest="run", 
-            action="store_true", 
-            help='Run HLS from CLI according to the Tcl scripts',)
-        argument = parser.add_argument("--silent", dest="silent", 
-            action="store_true", 
-            help="Do not provide a summary for each solution"
+        argument = parser.add_argument("--summary", dest="summary", action="store_true")
+        argument = parser.add_argument(
+            "--run",
+            dest="run",
+            action="store_true",
+            help="Run HLS from CLI according to the Tcl scripts",
         )
-        argument = parser.add_argument("--synthesis-report", dest="synthesis_report", 
-            action="store_true", 
-            help="Extend the status report for each solution with the synthesis report"
+        argument = parser.add_argument(
+            "--silent",
+            dest="silent",
+            action="store_true",
+            help="Do not provide a summary for each solution",
+        )
+        argument = parser.add_argument(
+            "--synthesis-report",
+            dest="synthesis_report",
+            action="store_true",
+            help="Extend the status report for each solution with the synthesis report",
         )
 
     def find_tcl_package(self, package_name):
@@ -79,33 +96,35 @@ class HLSSubverb(AccelerationSubverbExtensionPoint):
         :rtype list
         """
         current_dir = os.environ.get("PWD", "")
-        filter_data = [x for x in os.listdir(current_dir) if
-                            all(y in x for y in ["build"])]
+        filter_data = [
+            x for x in os.listdir(current_dir) if all(y in x for y in ["build"])
+        ]
         if len(filter_data) < 1:
             red(
-            "No build* directories found.\n"
-            + "Make sure you're in the root of your ROS 2 workspace and the build "
-            + "dir starts with 'build'."
+                "No build* directories found.\n"
+                + "Make sure you're in the root of your ROS 2 workspace and the build "
+                + "dir starts with 'build'."
             )
             sys.exit(1)
-        
+
         package_paths = []  # paths under a build* dir that match with package_name
         package_paths_tcl = []  # above, and that contain a .tcl file
         for buildir in filter_data:
-            build_current_dir = current_dir + "/" + buildir            
+            build_current_dir = current_dir + "/" + buildir
             for x in os.listdir(build_current_dir):
                 # if all(y in x for y in [package_name]):
                 if x == package_name:
-                    package_paths.append(build_current_dir + "/" + x) 
-    
+                    package_paths.append(build_current_dir + "/" + x)
+
         for p in package_paths:
             for x in os.listdir(p):
                 if all(y in x for y in [".tcl"]):
                     package_paths_tcl.append(p + "/" + x)
-        
+
         # drop any matches of .tcl.in as this is part of the ament generation process
-        package_paths_tcl = [x for x in package_paths_tcl if
-              all(y not in x for y in [".tcl.in"])]
+        package_paths_tcl = [
+            x for x in package_paths_tcl if all(y not in x for y in [".tcl.in"])
+        ]
 
         return package_paths_tcl
 
@@ -114,16 +133,16 @@ class HLSSubverb(AccelerationSubverbExtensionPoint):
 
         NOTE: data structure of the return type is as follows:
             {
-                'path': '/home/xilinx/ros2_ws/build-zcu102/simple_adder/project_simpleadder1',
+                'path': '<path-to-ros2-ws>/build-zcu102/simple_adder/project_simpleadder1',
                 'project': 'project_simpleadder1',
                 'solutions': [
                         {'solution_4ns': {
                                 'clock': '4',
-                                'path': '/home/xilinx/ros2_ws/build-zcu102/simple_adder/project_simpleadder1/solution_4ns'}
+                                'path': '<path-to-ros2-ws>/build-zcu102/simple_adder/project_simpleadder1/solution_4ns'}
                         },
                         {'solution_10ns': {
                                 'clock': '10',
-                                'path': '/home/xilinx/ros2_ws/build-zcu102/simple_adder/project_simpleadder1/solution_10ns'}
+                                'path': '<path-to-ros2-ws>/build-zcu102/simple_adder/project_simpleadder1/solution_10ns'}
                         }
                 ]
             }
@@ -132,13 +151,14 @@ class HLSSubverb(AccelerationSubverbExtensionPoint):
         :rtype dict
         """
         tcl_dic = {}
-        
+
         import re
+
         if not exists(tcl):
             red("Tcl " + tcl + " not found")
             sys.exit(1)
-        
-        data = open(tcl,'r').read()        
+
+        data = open(tcl, "r").read()
         project = re.findall("open_project -reset (.*)", data)[0]
         solutions = re.findall("open_solution (.*)", data)
         clocks = re.findall("create_clock -period (.*)", data)
@@ -149,15 +169,23 @@ class HLSSubverb(AccelerationSubverbExtensionPoint):
         if len(solutions) != len(clocks) or len(solutions) != len(parts):
             red("Size mismatch between solutions, clocks and parts")
             sys.exit(1)
-        
+
         # assign the dict
         tcl_dic["project"] = project
         tcl_dic["path"] = path
         tcl_dic["top"] = top
         tcl_dic["solutions"] = []
         for i in range(len(solutions)):
-            solution = {solutions[i].replace("-flow_target vitis", "").strip():{"clock":clocks[i], 
-                "path":path + "/" + solutions[i].replace("-flow_target vitis", "").strip()}}
+            solution = {
+                solutions[i]
+                .replace("-flow_target vitis", "")
+                .strip(): {
+                    "clock": clocks[i],
+                    "path": path
+                    + "/"
+                    + solutions[i].replace("-flow_target vitis", "").strip(),
+                }
+            }
             tcl_dic["solutions"].append(solution)
 
         return tcl_dic
@@ -167,8 +195,10 @@ class HLSSubverb(AccelerationSubverbExtensionPoint):
 
         :param string tcl: path to Tcl script
         :rtype: None
-        """         
-        cmd = "cd " + tcl[:tcl.rfind("/")] + " && vitis_hls -f " + tcl + " 2> /dev/null"
+        """
+        cmd = (
+            "cd " + tcl[: tcl.rfind("/")] + " && vitis_hls -f " + tcl + " 2> /dev/null"
+        )
         outs, errs = run(cmd, shell=True)
         if errs:
             red(errs)
@@ -182,7 +212,7 @@ class HLSSubverb(AccelerationSubverbExtensionPoint):
         NOTE: Tested in Vitis 2020.2
 
         :param solution: solution to print with shape as in
-                {'solution_4ns': {'clock': '4', 'path': '/home/xilinx/ros2_ws/build-zcu102/simple_adder/project_simpleadder1/solution_4ns'}}
+                {'solution_4ns': {'clock': '4', 'path': '<path-to-ros2-ws>/build-zcu102/simple_adder/project_simpleadder1/solution_4ns'}}
         :param configuration: data structure with the configuration
         :rtype: None
         """
@@ -190,14 +220,16 @@ class HLSSubverb(AccelerationSubverbExtensionPoint):
         solution_dict = solution[solution_name]
         grayinline("\t- Solution: ")
         magenta(solution_name)
-        
+
         #######################
         # gather project status
         #######################
         project_status = []
-        csimlog_path = solution_dict["path"] + "/csim/report/" + configuration["top"] + "_csim.log"
+        csimlog_path = (
+            solution_dict["path"] + "/csim/report/" + configuration["top"] + "_csim.log"
+        )
         try:
-            with open(csimlog_path,'r') as f:
+            with open(csimlog_path, "r") as f:
                 # Pass/Fail info is always in the second last line of the csim report
                 status_line = f.readlines()[-2]
                 if "0 errors" in status_line.lower():
@@ -211,22 +243,32 @@ class HLSSubverb(AccelerationSubverbExtensionPoint):
             pass
 
         # Pull setails from csynth report
-        csyn_path = solution_dict["path"] + "/syn/report/" + configuration["top"] + "_csynth.rpt"
+        csyn_path = (
+            solution_dict["path"]
+            + "/syn/report/"
+            + configuration["top"]
+            + "_csynth.rpt"
+        )
         if os.path.isfile(csyn_path):
-            project_status.append('syn_done')
-        
+            project_status.append("syn_done")
+
         # Pull details from cosim report
         try:
-            cosim_path = solution_dict["path"] + "/sim/report/" + configuration["top"] + "_cosim.rpt"
-            with open(cosim_path,'r') as f:
+            cosim_path = (
+                solution_dict["path"]
+                + "/sim/report/"
+                + configuration["top"]
+                + "_cosim.rpt"
+            )
+            with open(cosim_path, "r") as f:
                 # search through cosim report to find out pass/fail status for each language
                 for line in f:
                     # if configuration["language"] in line.lower():
                     if "pass" in line.lower():
-                        project_status.append('cosim_pass')
+                        project_status.append("cosim_pass")
                     elif "fail" in line.lower():
-                        project_status.append('cosim_fail')
-                project_status.append('cosim_done')
+                        project_status.append("cosim_fail")
+                project_status.append("cosim_done")
             f.close()
         except (OSError, IOError):
             pass
@@ -235,63 +277,89 @@ class HLSSubverb(AccelerationSubverbExtensionPoint):
 
         # Pull details from implementation directory, first the presence of an export...
         if os.path.isdir(solution_dict["path"] + "/impl/ip"):
-            project_status.append('export_ip_done')
+            project_status.append("export_ip_done")
         if os.path.isdir(solution_dict["path"] + "/impl/sysgen"):
-            project_status.append('export_sysgen_done')
-        # implementation, verilog and vhdl        
-        if os.path.isfile(solution_dict["path"] + "/impl/verilog/" + configuration["top"] + ".v"):
-            project_status.append('implementation_verilog')
-        if os.path.isfile(solution_dict["path"] + "/impl/vhdl/" + configuration["top"] + ".vhd"):
-            project_status.append('implementation_vhdl')
+            project_status.append("export_sysgen_done")
+        # implementation, verilog and vhdl
+        if os.path.isfile(
+            solution_dict["path"] + "/impl/verilog/" + configuration["top"] + ".v"
+        ):
+            project_status.append("implementation_verilog")
+        if os.path.isfile(
+            solution_dict["path"] + "/impl/vhdl/" + configuration["top"] + ".vhd"
+        ):
+            project_status.append("implementation_vhdl")
         # export
-        if os.path.isfile(solution_dict["path"] + "/impl/report/verilog/" + configuration["top"] + "_export.rpt"):
-            project_status.append('export_verilog')
-        if os.path.isfile(solution_dict["path"] + "/impl/report/vhdl/" + configuration["top"] + "_export.rpt"):
-            project_status.append('export_vhdl')
-        
+        if os.path.isfile(
+            solution_dict["path"]
+            + "/impl/report/verilog/"
+            + configuration["top"]
+            + "_export.rpt"
+        ):
+            project_status.append("export_verilog")
+        if os.path.isfile(
+            solution_dict["path"]
+            + "/impl/report/vhdl/"
+            + configuration["top"]
+            + "_export.rpt"
+        ):
+            project_status.append("export_vhdl")
+
         #######################
         # print project status
         #######################
-        grayinline("\t\t- C Simulation:              ") 
-        green("Pass") if "csim_pass" in project_status else red("Fail") if "csim_fail" in project_status \
-                else (yellow("Run (Can't get status)") if "csim_done" in project_status else yellow("Not Run"))
-        grayinline("\t\t- C Synthesis:               ") 
+        grayinline("\t\t- C Simulation:              ")
+        green("Pass") if "csim_pass" in project_status else red(
+            "Fail"
+        ) if "csim_fail" in project_status else (
+            yellow("Run (Can't get status)")
+            if "csim_done" in project_status
+            else yellow("Not Run")
+        )
+        grayinline("\t\t- C Synthesis:               ")
         green("Run") if "syn_done" in project_status else yellow("Not Run")
-        grayinline("\t\t- C/RTL Co-simulation:       ") 
-        green("Pass") if "cosim_pass" in project_status else (red("Fail") if "cosim_fail" in project_status \
-                else (yellow("Run (Can't get status)") if "cosim_done" in project_status else yellow("Not Run")))                
-        gray("\t\t- Export:" )
-        grayinline("\t\t\t- IP Catalog:        ") 
+        grayinline("\t\t- C/RTL Co-simulation:       ")
+        green("Pass") if "cosim_pass" in project_status else (
+            red("Fail")
+            if "cosim_fail" in project_status
+            else (
+                yellow("Run (Can't get status)")
+                if "cosim_done" in project_status
+                else yellow("Not Run")
+            )
+        )
+        gray("\t\t- Export:")
+        grayinline("\t\t\t- IP Catalog:        ")
         green("Run") if "export_ip_done" in project_status else yellow("Not Run")
-        grayinline("\t\t\t- System Generator:  ") 
+        grayinline("\t\t\t- System Generator:  ")
         green("Run") if "export_sysgen_done" in project_status else yellow("Not Run")
-        grayinline("\t\t\t- Export Evaluation: ") 
+        grayinline("\t\t\t- Export Evaluation: ")
         green("Run") if "evaluate_done" in project_status else yellow("Not Run")
 
         if context.args.synthesis_report:
             if os.path.exists(csyn_path):
-                gray("\t\t- Synthesis report: " + csyn_path )
-                with open(csyn_path,'r') as f:
+                gray("\t\t- Synthesis report: " + csyn_path)
+                with open(csyn_path, "r") as f:
                     report = f.readlines()
                     for l in report:
                         grayinline("\t\t\t" + l)
             else:
-                red("\t\t- No synthesis report found at: " + csyn_path )
+                red("\t\t- No synthesis report found at: " + csyn_path)
 
         # # NOTE: replaced by --synthesis-report instead
         # try:
         #     with open(csyn_path,'r') as f:
         #         report = f.readlines()
-                
+
         #         # print the relevant pieces of the report
         #         gray("\t\t- Report:")
         #         # Timing and Latency
         #         for l in report[14:33]:
         #             grayinline("\t\t\t" + l)
-        #         # 
+        #         #
         #         for l in report[43:64]:
         #             grayinline("\t\t\t" + l)
-                
+
         # # DEPRECATED: changing between Vitis versions so printing the report
         # # instead of parsing lines.
         # #
@@ -305,7 +373,7 @@ class HLSSubverb(AccelerationSubverbExtensionPoint):
         # #         clk_estimated = ap_clk_line_elements[3].split()[0]
         # #         clk_uncertainty = ap_clk_line_elements[4].split()[0]
         # #         gray("\t\t- Clock:")
-        # #         grayinline("\t\t\t- Target (ns):       ") 
+        # #         grayinline("\t\t\t- Target (ns):       ")
         # #         print(clk_target)
         # #         grayinline("\t\t\t- Estimated (ns):    ")
         # #         green(clk_estimated) if float(clk_estimated) < float(clk_target) else red(clk_estimated)
@@ -316,16 +384,15 @@ class HLSSubverb(AccelerationSubverbExtensionPoint):
         # except (OSError, IOError):
         #     pass
 
-
     def print_summary_solutions(self, configuration):
-        """ Process existing solutions within a configuration data structure and display a summary of them 
+        """Process existing solutions within a configuration data structure and display a summary of them
 
         NOTE: this method operates on the configuration data structure that corresponds to one project. If
         multiple projects are available in under the same ROS 2 package, multiple calls to this method
         should be executed.
 
         NOTE 2: invoke with "--summary" flag. Will ignore status report (which is the default output)
-        
+
         :param: configuration: data structure with the HLS configuration (see process_tcl for details)
         :rtype None
         """
@@ -339,33 +406,38 @@ class HLSSubverb(AccelerationSubverbExtensionPoint):
         # Solutions, each:
         # {'solution_4ns': {
         #                 'clock': '4',
-        #                 'path': '/home/xilinx/ros2_ws/build-zcu102/simple_adder/project_simpleadder1/solution_4ns'}
+        #                 'path': '<path-to-ros2-ws>/build-zcu102/simple_adder/project_simpleadder1/solution_4ns'}
         # },
         solutions = configuration["solutions"]
 
         for s in solutions:
             solution_key = list(s.keys())[0]
-            csyn_path = s[solution_key]["path"] + "/syn/report/" + configuration["top"] + "_csynth.rpt"
+            csyn_path = (
+                s[solution_key]["path"]
+                + "/syn/report/"
+                + configuration["top"]
+                + "_csynth.rpt"
+            )
             # print(csyn_path)
             try:
-                with open(csyn_path,'r') as f:
+                with open(csyn_path, "r") as f:
                     results_from_solution = []
 
                     # Fetch line 23:
                     #       |ap_clk  |   5.00|     3.492|        0.62|
                     report_content = f.readlines()
                     ap_clk_line = report_content[22]
-                    ap_clk_line_elements = [x.strip() for x in ap_clk_line.split('|')]
+                    ap_clk_line_elements = [x.strip() for x in ap_clk_line.split("|")]
                     clk_target = ap_clk_line_elements[2].split()[0]
                     clk_estimated = ap_clk_line_elements[3].split()[0]
                     clk_uncertainty = ap_clk_line_elements[4].split()[0]
                     results_from_solution.append(clk_target)
-                    results_from_solution.append(clk_estimated)                    
+                    results_from_solution.append(clk_estimated)
 
                     # Fetch line 32, latency in cycles
                     #       |        4|        4|  16.000 ns|  16.000 ns|    5|    5|     none|
                     summary_line = report_content[31]
-                    summary_line_elements = [x.strip() for x in summary_line.split('|')]
+                    summary_line_elements = [x.strip() for x in summary_line.split("|")]
                     latency_max = summary_line_elements[4].split()[0]
                     # results_from_solution.append((float(clk_estimated) + float(clk_uncertainty))*float(interval_max))
                     results_from_solution.append(latency_max)
@@ -376,7 +448,7 @@ class HLSSubverb(AccelerationSubverbExtensionPoint):
                     # By default it's line 63
                     total_line = report_content[58]
                     utilization_line = report_content[62]
-                    
+
                     # these lines may not always be in the same positon thereby we need to search for it
                     # and rewrite it
                     for i in range(len(report_content)):
@@ -385,14 +457,16 @@ class HLSSubverb(AccelerationSubverbExtensionPoint):
                             total_line = report_content[i - 4]
 
                     # parse utilization %
-                    utilization_line_elements = [x.strip() for x in utilization_line.split('|')]
+                    utilization_line_elements = [
+                        x.strip() for x in utilization_line.split("|")
+                    ]
                     bram_utilization = utilization_line_elements[2]
                     dsp_utilization = utilization_line_elements[3]
                     ff_utilization = utilization_line_elements[4]
                     lut_utilization = utilization_line_elements[5]
 
                     # parse total
-                    total_line_elements = [x.strip() for x in total_line.split('|')]
+                    total_line_elements = [x.strip() for x in total_line.split("|")]
                     bram_total = total_line_elements[2]
                     dsp_total = total_line_elements[3]
                     ff_total = total_line_elements[4]
@@ -421,8 +495,23 @@ class HLSSubverb(AccelerationSubverbExtensionPoint):
         #     "solutionN": [clk_target, clk_estimated, latency_max,
         #                        ,bram_total, bram_utilization, dsp_total, dsp_utilization,
         #                         ff_total, ff_utilization, lut_total, lut_utilization]
-        print("Solution#" + "\t" + "tar.clk" + "\t" + "est.clk" + "\t\t" + "latency_max" + "\t"+"BRAM_18K"
-            + "\t"+ "DSP"+ "\t"+ "FF"+ "\t\t"+ "LUT")
+        print(
+            "Solution#"
+            + "\t"
+            + "tar.clk"
+            + "\t"
+            + "est.clk"
+            + "\t\t"
+            + "latency_max"
+            + "\t"
+            + "BRAM_18K"
+            + "\t"
+            + "DSP"
+            + "\t"
+            + "FF"
+            + "\t\t"
+            + "LUT"
+        )
 
         # Order dict according to time, (element[2])
         try:
@@ -431,41 +520,89 @@ class HLSSubverb(AccelerationSubverbExtensionPoint):
             pass  # wasn't able to order them
 
         # Print results
-        if (type(results) is list):
+        if type(results) is list:
             for key, element in results:
-                print(str(key) + "\t" + str(element[0]) + "\t" + str(element[1])
-                    + "\t\t" + str(element[2]) + "\t\t" + str(element[3]) + " (" + str(element[4])
-                    + "%)\t\t" + str(element[5]) + " (" + str(element[6]) + "%)\t" + str(element[7]) + " (" + str(element[8])
-                    + "%)\t" + str(element[9]) + " (" + str(element[10]) + "%)\t")
+                print(
+                    str(key)
+                    + "\t"
+                    + str(element[0])
+                    + "\t"
+                    + str(element[1])
+                    + "\t\t"
+                    + str(element[2])
+                    + "\t\t"
+                    + str(element[3])
+                    + " ("
+                    + str(element[4])
+                    + "%)\t\t"
+                    + str(element[5])
+                    + " ("
+                    + str(element[6])
+                    + "%)\t"
+                    + str(element[7])
+                    + " ("
+                    + str(element[8])
+                    + "%)\t"
+                    + str(element[9])
+                    + " ("
+                    + str(element[10])
+                    + "%)\t"
+                )
         else:
             for key, element in results.items():
-                print(str(key) + "\t" + str(element[0]) + "\t" + str(element[1])
-                    + "\t\t" + str(element[2]) + "\t\t" + str(element[3]) + " (" + str(element[4])
-                    + "%)\t\t" + str(element[5]) + " (" + str(element[6]) + "%)\t" + str(element[7]) + " (" + str(element[8])
-                    + "%)\t" + str(element[9]) + " (" + str(element[10]) + "%)\t")
-
+                print(
+                    str(key)
+                    + "\t"
+                    + str(element[0])
+                    + "\t"
+                    + str(element[1])
+                    + "\t\t"
+                    + str(element[2])
+                    + "\t\t"
+                    + str(element[3])
+                    + " ("
+                    + str(element[4])
+                    + "%)\t\t"
+                    + str(element[5])
+                    + " ("
+                    + str(element[6])
+                    + "%)\t"
+                    + str(element[7])
+                    + " ("
+                    + str(element[8])
+                    + "%)\t"
+                    + str(element[9])
+                    + " ("
+                    + str(element[10])
+                    + "%)\t"
+                )
 
     def main(self, *, context):  # noqa: D102
-        if not context.args.package_name:   
+        if not context.args.package_name:
             red("Provide package_name argument")
             sys.exit(1)
-        
+
         package_paths_tcl = self.find_tcl_package(context.args.package_name)
         if len(package_paths_tcl) > 0:
             pass
         else:
             yellow("No HLS Tcl scripts found for package: " + context.args.package_name)
-        
+
         ########
         # run
         ########
         if context.args.run:  # run Tcl scripts
             for tcl in package_paths_tcl:
                 if not context.args.silent:
-                    print("Found Tcl script \"" + tcl.split("/")[-1] + "\" for package: " + context.args.package_name)
+                    print(
+                        'Found Tcl script "'
+                        + tcl.split("/")[-1]
+                        + '" for package: '
+                        + context.args.package_name
+                    )
                     print("Executing " + tcl)
 
-                # launch                
+                # launch
                 self.run_tcl(context, tcl)
             # sys.exit(0)
 
@@ -474,13 +611,14 @@ class HLSSubverb(AccelerationSubverbExtensionPoint):
         ########
         if context.args.summary:
             for tcl in package_paths_tcl:
-                gray("# " + str(tcl))  # print which project, differentiate when multiple available
+                gray(
+                    "# " + str(tcl)
+                )  # print which project, differentiate when multiple available
                 configuration = self.process_tcl(tcl)
                 solutions = configuration["solutions"]
                 if len(solutions) > 0:
                     self.print_summary_solutions(configuration)
             sys.exit(0)
-
 
         ########
         # status
@@ -496,4 +634,3 @@ class HLSSubverb(AccelerationSubverbExtensionPoint):
                     print(configuration["path"])
                     for s in solutions:
                         self.print_status_solution(s, configuration, context)
-

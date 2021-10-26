@@ -9,7 +9,7 @@
 #   \___\/\___\
 #
 # Licensed under the Apache License, Version 2.0
-# 
+#
 import os
 import sys
 
@@ -40,7 +40,9 @@ class VppSubverb(AccelerationSubverbExtensionPoint):
 
     def __init__(self):  # noqa: D107
         super().__init__()
-        satisfies_version(AccelerationSubverbExtensionPoint.EXTENSION_POINT_VERSION, "^1.0")
+        satisfies_version(
+            AccelerationSubverbExtensionPoint.EXTENSION_POINT_VERSION, "^1.0"
+        )
 
     def add_arguments(self, *, parser):  # noqa: D102
         parser.description += (
@@ -81,8 +83,8 @@ class VppSubverb(AccelerationSubverbExtensionPoint):
             sys.exit(1)
 
         # conform a command like, start including variables:
-        #     XILINX_VIVADO=/home/erle/XRS/ros2_ws/xilinx/vivado PATH=/home/erle/XRS/ros2_ws/xilinx/vitis_hls/bin:$PATH
-        #   /home/erle/XRS/ros2_ws/xilinx/vitis/bin/v++
+        #     XILINX_VIVADO=<path-to-ros2-ws>/xilinx/vivado PATH=<path-to-ros2-ws>/xilinx/vitis_hls/bin:$PATH
+        #   <path-to-ros2-ws>/xilinx/vitis/bin/v++
         #
         cmd = ""
         cmd += "cd " + vpp_dir + " && "  # head to build dir
