@@ -137,19 +137,13 @@ def get_workspace_path():
 def get_workspace_dir():
     """
     Get the name to the current ROS 2 workspace
-
     :rtype: String
     """
-    current_dir = os.environ.get("PWD", "")
+    current_dir = get_workspace_path()
     workspace_dir = current_dir.split("/")[-1]
-    if os.path.exists(current_dir) and os.path.exists(current_dir + "/src"):
-        return workspace_dir
-    else:
-        raise FileNotFoundError(
-            workspace_dir,
-            "consider running "
-            + "this command from the root directory of the ROS 2 workspace ",
-        )
+    return workspace_dir
+
+
 
 
 def get_vitis_dir():
