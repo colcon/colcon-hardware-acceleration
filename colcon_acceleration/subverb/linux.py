@@ -302,7 +302,7 @@ class LinuxSubverb(AccelerationSubverbExtensionPoint):
         in the image.
 
         NOTE: Location, syntax and other related matters are defined
-            within the `acceleration_firmware_xilinx` package. Refer to it for more
+            within the `acceleration_firmware_kv260` package. Refer to it for more
             details.
         """
         # Add a security warning

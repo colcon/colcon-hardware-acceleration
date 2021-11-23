@@ -67,7 +67,7 @@ class AccelerationSubverbExtensionPoint:
         Reads BOARD file and returns it as a string.
 
         NOTE: firmware is board-specific. Consult the README of
-        acceleration_firmware_xilinx and/or change branch as per your
+        acceleration_firmware_kv260 and/or change branch as per your
         hardware/board requirements.
 
         :rtype: String
@@ -93,7 +93,7 @@ class AccelerationSubverbExtensionPoint:
         Reads BOARD file and returns it as a string.
 
         NOTE: firmware is board-specific. Consult the README of
-        acceleration_firmware_xilinx and/or change branch as per your
+        acceleration_firmware_kv260 and/or change branch as per your
         hardware/board requirements.
 
         :rtype: String

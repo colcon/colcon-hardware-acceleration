@@ -42,7 +42,7 @@ class VersionSubverb(AccelerationSubverbExtensionPoint):
         """Version of Vitis being used.
 
         NOTE: Location, syntax and other related matters are defined
-            within the `acceleration_firmware_xilinx` package. Refer to it for more
+            within the `acceleration_firmware_kv260` package. Refer to it for more
             details.
         """
         if not context.args.component:  # defaults to this package's version
