@@ -367,7 +367,7 @@ class HypervisorSubverb(AccelerationSubverbExtensionPoint):
         TODO: ramdisk selection is currently not implemented.
 
         NOTE: Location, syntax and other related matters are defined
-            within the `acceleration_firmware_xilinx` package. Refer to it for more
+            within the `acceleration_firmware_kv260` package. Refer to it for more
             details.
 
         NOTE 2: to simplify implementation, for now, domUs will use rootfs

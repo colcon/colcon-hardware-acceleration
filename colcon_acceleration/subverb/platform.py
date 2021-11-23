@@ -28,11 +28,11 @@ class PlatformSubverb(AccelerationSubverbExtensionPoint):
         """Platform enabled
 
         NOTE: firmware is board-specific. Consult the README of
-        acceleration_firmware_xilinx and/or change branch as per your
+        acceleration_firmware_kv260 and/or change branch as per your
         hardware/board requirements.
 
         NOTE 2: Location, syntax and other related matters are defined
-            within the `acceleration_firmware_xilinx` package. Refer to it for more
+            within the `acceleration_firmware_kv260` package. Refer to it for more
             details.
         """
         print(self.get_platform())
