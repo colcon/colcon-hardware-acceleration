@@ -67,4 +67,4 @@ class ListSubverb(AccelerationSubverbExtensionPoint):
                 #   maintain and also more consistent with the REP.
 
         else:            
-            print('Select firmware first with "colcon acceleraction select '+ str(firmware_options) +'".')
+            print('Select firmware first with "colcon acceleration select '+ str(firmware_options) +'".')
