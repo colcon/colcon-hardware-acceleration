@@ -144,8 +144,6 @@ def get_workspace_dir():
     return workspace_dir
 
 
-
-
 def get_vitis_dir():
     """
     Get the path to the Vitis deployed software.
@@ -826,7 +824,7 @@ def copy_ros2_workspace(install_dir):  # noqa: D102
 
     # Create setup.bash and copy to mountpoint in target_dir
     script_path = create_ros2_overlay_script()
-    target_dir_embedded = "/opt/ros/foxy/"
+    target_dir_embedded = "/opt/ros/" + os.getenv("ROS_DISTRO") + "/"
     target_dir = mountpoint + target_dir_embedded
 
     cmd = "sudo mkdir -p " + target_dir
