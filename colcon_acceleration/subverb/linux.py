@@ -119,7 +119,7 @@ class LinuxSubverb(AccelerationSubverbExtensionPoint):
         outs, errs = run(cmd, shell=True, timeout=15)
         if errs:
             red(
-                "Something went wrong while replacig the kernel.\n"
+                "Something went wrong while replacing the kernel.\n"
                 + "Review the output: "
                 + errs
             )
