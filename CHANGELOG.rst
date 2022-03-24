@@ -2,6 +2,20 @@
 Changelog for package colcon_acceleration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.5.0 (2022-03-24)
+------------------
+* Release 0.5.0
+* Add copyright and spell check tests
+* Update stdeb.cfg
+* Drop README.rst
+* Advertise colcon_core.extension_point entry point for subverb
+* Fix typo
+
+0.4.0 (2022-02-15)
+------------------
+* Release 0.4.0
+* Avoid harcoding ROS default installation
+
 0.3.0 (2021-11-23)
 ------------------
 * Improve CHANGELOG subitems in 0.1.0
