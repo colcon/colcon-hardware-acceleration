@@ -2,6 +2,11 @@
 Changelog for package colcon_acceleration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.5.1 (2022-03-24)
+------------------
+* Release 0.5.1
+* Add publish-python.yaml
+
 0.5.0 (2022-03-24)
 ------------------
 * Release 0.5.0
