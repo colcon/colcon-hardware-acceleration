@@ -1,15 +1,6 @@
-#    ____  ____
-#   /   /\/   /
-#  /___/  \  /   Copyright (c) 2021, Xilinx®.
-#  \   \   \/    Author: Víctor Mayoral Vilches <victorma@xilinx.com>
-#   \   \
-#   /   /
-#  /___/   /\
-#  \   \  /  \
-#   \___\/\___\
-#
+# Copyright 2022 Víctor Mayoral-Vilches
 # Licensed under the Apache License, Version 2.0
-# 
+
 from colcon_core.command import add_subparsers
 from colcon_core.plugin_system import satisfies_version
 from colcon_core.verb import VerbExtensionPoint
@@ -31,7 +22,8 @@ class AccelerationVerb(VerbExtensionPoint):
         # get subverb extensions and let them add their arguments
         subverb_extensions = get_subverb_extensions()
         add_subparsers(
-            parser, "colcon acceleration", subverb_extensions, attribute="subverb_name"
+            parser, "colcon acceleration",
+            subverb_extensions, attribute="subverb_name"
         )
 
     def main(self, *, context):  # noqa: D102

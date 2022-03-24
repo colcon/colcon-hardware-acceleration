@@ -1,18 +1,7 @@
-#    ____  ____
-#   /   /\/   /
-#  /___/  \  /   Copyright (c) 2021, Xilinx®.
-#  \   \   \/    Author: Víctor Mayoral Vilches <victorma@xilinx.com>
-#   \   \
-#   /   /
-#  /___/   /\
-#  \   \  /  \
-#   \___\/\___\
-#
+# Copyright 2022 Víctor Mayoral-Vilches
 # Licensed under the Apache License, Version 2.0
-# 
 
 # list hardware acceleration technology solutions available
-
 import os
 
 from colcon_core.plugin_system import satisfies_version
@@ -27,7 +16,7 @@ from colcon_acceleration.verb import green, yellow, red
 
 def get_firmware_options():
     """Search the workspace for firmware options
-    
+
     Looks into "acceleration/firmware"        
     """
     current_dir = os.environ.get("PWD", "")

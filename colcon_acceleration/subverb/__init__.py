@@ -1,15 +1,6 @@
-#    ____  ____
-#   /   /\/   /
-#  /___/  \  /   Copyright (c) 2021, Xilinx®.
-#  \   \   \/    Author: Víctor Mayoral Vilches <victorma@xilinx.com>
-#   \   \
-#   /   /
-#  /___/   /\
-#  \   \  /  \
-#   \___\/\___\
-#
+# Copyright 2022 Víctor Mayoral-Vilches
 # Licensed under the Apache License, Version 2.0
-#
+
 import os
 import subprocess
 import sys
@@ -896,7 +887,7 @@ def copy_libstdcppfs(partition=2):  # noqa: D102
 
 def create_ros2_overlay_script():  # noqa: D102
     """
-    Creates common /opt/ros/foxy/setup.bash script on the go
+    Creates common /opt/ros/<ROS distro>/setup.bash script on the go
 
     return: path to the script just created under /tmp (/tmp/setup.bash)
     """
