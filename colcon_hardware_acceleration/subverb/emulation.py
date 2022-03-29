@@ -250,7 +250,7 @@ class EmulationSubverb(AccelerationSubverbExtensionPoint):
                 + "the workspace first"
             )
             sys.exit(1)
-        green("- Verified that install/ is available in the current ROS 2 workspace")
+        green("- Verified that install/ is available in the current colcon workspace")
 
         rawimage_path = get_rawimage_path()
         if not rawimage_path:
@@ -358,7 +358,7 @@ class EmulationSubverb(AccelerationSubverbExtensionPoint):
             green("- Image mounted successfully at: " + mountpoint)
 
             workspace_dir = get_workspace_dir()
-            # remove prior overlay ROS 2 workspace files at "/<workspace_dir>",
+            # remove prior overlay colcon workspace files at "/<workspace_dir>",
             #  and copy the <ws>/install directory as such
             if os.path.exists(mountpoint + "/" + workspace_dir):
                 cmd = "sudo rm -r " + mountpoint + "/" + workspace_dir + "/*"
@@ -371,7 +371,7 @@ class EmulationSubverb(AccelerationSubverbExtensionPoint):
                     )
                     sys.exit(1)
                 green(
-                    "- Successfully cleaned up prior overlay ROS 2 workspace "
+                    "- Successfully cleaned up prior overlay colcon workspace "
                     + "at: "
                     + mountpoint
                     + "/"
@@ -379,7 +379,7 @@ class EmulationSubverb(AccelerationSubverbExtensionPoint):
                 )
             else:
                 yellow(
-                    "No prior overlay ROS 2 workspace found "
+                    "No prior overlay colcon workspace found "
                     + "at: "
                     + mountpoint
                     + "/"
@@ -390,7 +390,7 @@ class EmulationSubverb(AccelerationSubverbExtensionPoint):
                 outs, errs = run(cmd, shell=True)
                 if errs:
                     red(
-                        "Something went wrong while creating overlay ROS 2 workspace.\n"
+                        "Something went wrong while creating overlay colcon workspace.\n"
                         + "Review the output: "
                         + errs
                     )
@@ -401,7 +401,7 @@ class EmulationSubverb(AccelerationSubverbExtensionPoint):
             outs, errs = run(cmd, shell=True)
             if errs:
                 red(
-                    "Something went wrong while copying overlay ROS 2 workspace to mountpoint.\n"
+                    "Something went wrong while copying overlay colcon workspace to mountpoint.\n"
                     + "Review the output: "
                     + errs
                 )

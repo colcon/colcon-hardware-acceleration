@@ -17,7 +17,7 @@ from colcon_hardware_acceleration.subverb import (
     run,
     mountpoint1,
     exists,
-    copy_ros2_workspace,
+    copy_colcon_workspace,
     copy_libstdcppfs,
 )
 from colcon_hardware_acceleration.verb import green, yellow, red, gray
@@ -493,7 +493,7 @@ class LinuxSubverb(AccelerationSubverbExtensionPoint):
         # copy workspace to image
         #####################
         if context.args.install_dir:
-            copy_ros2_workspace(context.args.install_dir)
+            copy_colcon_workspace(context.args.install_dir)
 
         #####################
         # Fixes in rootfs
