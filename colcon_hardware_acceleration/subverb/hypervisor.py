@@ -1,22 +1,13 @@
-#    ____  ____
-#   /   /\/   /
-#  /___/  \  /   Copyright (c) 2021, Xilinx®.
-#  \   \   \/    Author: Víctor Mayoral Vilches <victorma@xilinx.com>
-#   \   \
-#   /   /
-#  /___/   /\
-#  \   \  /  \
-#   \___\/\___\
-#
+# Copyright 2022 Víctor Mayoral-Vilches
 # Licensed under the Apache License, Version 2.0
-# 
+
 import os
 import sys
 import errno
 from pathlib import Path
 
 from colcon_core.plugin_system import satisfies_version
-from colcon_acceleration.subverb import (
+from colcon_hardware_acceleration.subverb import (
     AccelerationSubverbExtensionPoint,
     get_vitis_dir,
     get_rawimage_path,
@@ -33,7 +24,7 @@ from colcon_acceleration.subverb import (
     copy_ros2_workspace,
     copy_libstdcppfs
 )
-from colcon_acceleration.verb import green, yellow, red, gray
+from colcon_hardware_acceleration.verb import green, yellow, red, gray
 
 ## Only dom0
 TEMPLATE_CONFIG = """\

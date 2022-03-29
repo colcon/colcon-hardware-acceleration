@@ -1,22 +1,13 @@
-#    ____  ____
-#   /   /\/   /
-#  /___/  \  /   Copyright (c) 2021, Xilinx®.
-#  \   \   \/    Author: Víctor Mayoral Vilches <victorma@xilinx.com>
-#   \   \
-#   /   /
-#  /___/   /\
-#  \   \  /  \
-#   \___\/\___\
-#
+# Copyright 2022 Víctor Mayoral-Vilches
 # Licensed under the Apache License, Version 2.0
-#
+
 import os
 import sys
 
 from colcon_core.package_discovery import discover_packages
 from colcon_core.package_identification import get_package_identification_extensions
 from colcon_core.plugin_system import satisfies_version
-from colcon_acceleration.subverb import (
+from colcon_hardware_acceleration.subverb import (
     AccelerationSubverbExtensionPoint,
     check_install_directory,
     get_rawimage_path,
@@ -27,7 +18,7 @@ from colcon_acceleration.subverb import (
     get_vivado_dir,
     exists,
 )
-from colcon_acceleration.verb import (
+from colcon_hardware_acceleration.verb import (
     green,
     yellow,
     red,

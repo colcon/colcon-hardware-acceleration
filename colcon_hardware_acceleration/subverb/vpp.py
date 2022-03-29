@@ -1,20 +1,11 @@
-#    ____  ____
-#   /   /\/   /
-#  /___/  \  /   Copyright (c) 2021, Xilinx®.
-#  \   \   \/    Author: Víctor Mayoral Vilches <victorma@xilinx.com>
-#   \   \
-#   /   /
-#  /___/   /\
-#  \   \  /  \
-#   \___\/\___\
-#
+# Copyright 2022 Víctor Mayoral-Vilches
 # Licensed under the Apache License, Version 2.0
-#
+
 import os
 import sys
 
 from colcon_core.plugin_system import satisfies_version
-from colcon_acceleration.subverb import (
+from colcon_hardware_acceleration.subverb import (
     AccelerationSubverbExtensionPoint,
     get_vitis_dir,
     get_build_dir,
@@ -23,7 +14,7 @@ from colcon_acceleration.subverb import (
     get_vitis_hls_dir,
     get_platform_dir,
 )
-from colcon_acceleration.verb import yellow, red
+from colcon_hardware_acceleration.verb import yellow, red
 
 
 class VppSubverb(AccelerationSubverbExtensionPoint):

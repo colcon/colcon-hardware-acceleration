@@ -1,15 +1,6 @@
-#    ____  ____
-#   /   /\/   /
-#  /___/  \  /   Copyright (c) 2021, Xilinx®.
-#  \   \   \/    Author: Víctor Mayoral Vilches <victorma@xilinx.com>
-#   \   \
-#   /   /
-#  /___/   /\
-#  \   \  /  \
-#   \___\/\___\
-#
+# Copyright 2022 Víctor Mayoral-Vilches
 # Licensed under the Apache License, Version 2.0
-#
+
 import os
 import subprocess
 import sys
@@ -17,7 +8,7 @@ import sys
 from colcon_core.logging import colcon_logger
 from colcon_core.plugin_system import instantiate_extensions
 from colcon_core.plugin_system import order_extensions_by_name
-from colcon_acceleration.verb import gray, yellow, red, green
+from colcon_hardware_acceleration.verb import gray, yellow, red, green
 
 logger = colcon_logger.getChild(__name__)
 
@@ -142,8 +133,6 @@ def get_workspace_dir():
     current_dir = get_workspace_path()
     workspace_dir = current_dir.split("/")[-1]
     return workspace_dir
-
-
 
 
 def get_vitis_dir():
@@ -826,7 +815,7 @@ def copy_ros2_workspace(install_dir):  # noqa: D102
 
     # Create setup.bash and copy to mountpoint in target_dir
     script_path = create_ros2_overlay_script()
-    target_dir_embedded = "/opt/ros/foxy/"
+    target_dir_embedded = "/opt/ros/" + os.getenv("ROS_DISTRO") + "/"
     target_dir = mountpoint + target_dir_embedded
 
     cmd = "sudo mkdir -p " + target_dir
@@ -898,7 +887,7 @@ def copy_libstdcppfs(partition=2):  # noqa: D102
 
 def create_ros2_overlay_script():  # noqa: D102
     """
-    Creates common /opt/ros/foxy/setup.bash script on the go
+    Creates common /opt/ros/<ROS distro>/setup.bash script on the go
 
     return: path to the script just created under /tmp (/tmp/setup.bash)
     """

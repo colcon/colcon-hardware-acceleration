@@ -1,13 +1,4 @@
-#    ____  ____
-#   /   /\/   /
-#  /___/  \  /   Copyright (c) 2021, Xilinx®.
-#  \   \   \/    Author: Víctor Mayoral Vilches <victorma@xilinx.com>
-#   \   \
-#   /   /
-#  /___/   /\
-#  \   \  /  \
-#   \___\/\___\
-#
+# Copyright 2022 Víctor Mayoral-Vilches
 # Licensed under the Apache License, Version 2.0
 
 # select across the ROS 2 hardware acceleration firmware solutions available
@@ -15,13 +6,13 @@
 import os
 
 from colcon_core.plugin_system import satisfies_version
-from colcon_acceleration.subverb import (
+from colcon_hardware_acceleration.subverb import (
     AccelerationSubverbExtensionPoint,
     run,
 )
-from colcon_acceleration import __version__
-from colcon_acceleration.verb import green, yellow, red
-from colcon_acceleration.subverb.list import get_firmware_options
+from colcon_hardware_acceleration import __version__
+from colcon_hardware_acceleration.verb import green, yellow, red
+from colcon_hardware_acceleration.subverb.list import get_firmware_options
 
 
 class SelectSubverb(AccelerationSubverbExtensionPoint):
