@@ -2,6 +2,12 @@
 Changelog for package colcon-hardware-acceleration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.6.0 (2022-03-29)
+------------------
+* Release 0.6.0
+* Rename ROS workspace to colcon workspace in README
+* Rename to colcon-hardware-acceleration
+
 0.5.1 (2022-03-24)
 ------------------
 * Release 0.5.1
