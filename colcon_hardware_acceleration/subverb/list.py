@@ -5,13 +5,13 @@
 import os
 
 from colcon_core.plugin_system import satisfies_version
-from colcon_acceleration.subverb import (
+from colcon_hardware_acceleration.subverb import (
     AccelerationSubverbExtensionPoint,
     get_firmware_dir,
     run,
 )
-from colcon_acceleration import __version__
-from colcon_acceleration.verb import green, yellow, red
+from colcon_hardware_acceleration import __version__
+from colcon_hardware_acceleration.verb import green, yellow, red
 
 
 def get_firmware_options():

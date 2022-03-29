@@ -6,7 +6,7 @@ artifacts:
     uploads:
       - type: packagecloud
         config:
-          repository: ros-acceleration/colcon-acceleration
+          repository: ros-acceleration/colcon-hardware-acceleration
           distributions:
             - ubuntu:bionic
             - ubuntu:focal

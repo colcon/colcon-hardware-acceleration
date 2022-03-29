@@ -7,7 +7,7 @@ import sys
 from colcon_core.package_discovery import discover_packages
 from colcon_core.package_identification import get_package_identification_extensions
 from colcon_core.plugin_system import satisfies_version
-from colcon_acceleration.subverb import (
+from colcon_hardware_acceleration.subverb import (
     AccelerationSubverbExtensionPoint,
     check_install_directory,
     get_rawimage_path,
@@ -18,7 +18,7 @@ from colcon_acceleration.subverb import (
     get_vivado_dir,
     exists,
 )
-from colcon_acceleration.verb import (
+from colcon_hardware_acceleration.verb import (
     green,
     yellow,
     red,

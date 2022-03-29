@@ -4,7 +4,7 @@
 from colcon_core.command import add_subparsers
 from colcon_core.plugin_system import satisfies_version
 from colcon_core.verb import VerbExtensionPoint
-from colcon_acceleration.subverb import get_subverb_extensions
+from colcon_hardware_acceleration.subverb import get_subverb_extensions
 
 
 class AccelerationVerb(VerbExtensionPoint):

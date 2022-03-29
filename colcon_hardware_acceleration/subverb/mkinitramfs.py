@@ -5,7 +5,7 @@ import os
 import sys
 
 from colcon_core.plugin_system import satisfies_version
-from colcon_acceleration.subverb import (
+from colcon_hardware_acceleration.subverb import (
     AccelerationSubverbExtensionPoint,
     check_install_directory,
     get_rawimage_path,
@@ -17,7 +17,7 @@ from colcon_acceleration.subverb import (
     mount_rawimage,
     umount_rawimage,
 )
-from colcon_acceleration.verb import green, yellow, red
+from colcon_hardware_acceleration.verb import green, yellow, red
 
 
 class MkinitramfsSubverb(AccelerationSubverbExtensionPoint):

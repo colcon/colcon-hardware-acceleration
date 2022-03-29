@@ -4,14 +4,14 @@
 import sys
 
 from colcon_core.plugin_system import satisfies_version
-from colcon_acceleration.subverb import (
+from colcon_hardware_acceleration.subverb import (
     AccelerationSubverbExtensionPoint,
     get_rawimage_path,
     mount_rawimage,
     umount_rawimage,
     run,
 )
-from colcon_acceleration import __version__
+from colcon_hardware_acceleration import __version__
 
 
 class UmountSubverb(AccelerationSubverbExtensionPoint):

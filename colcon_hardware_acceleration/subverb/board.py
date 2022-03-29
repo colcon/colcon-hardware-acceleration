@@ -4,19 +4,19 @@
 import os
 
 from colcon_core.plugin_system import satisfies_version
-from colcon_acceleration.subverb import AccelerationSubverbExtensionPoint, get_vitis_dir
-from colcon_acceleration import __version__
+from colcon_hardware_acceleration.subverb import AccelerationSubverbExtensionPoint, get_vitis_dir
+from colcon_hardware_acceleration import __version__
 
 
-class PlatformSubverb(AccelerationSubverbExtensionPoint):
-    """Report the platform enabled in the deployed firmware."""
+class BoardSubverb(AccelerationSubverbExtensionPoint):
+    """Report the board supported in the deployed firmware."""
 
     def __init__(self):  # noqa: D107
         super().__init__()
         satisfies_version(AccelerationSubverbExtensionPoint.EXTENSION_POINT_VERSION, "^1.0")
 
     def main(self, *, context):  # noqa: D102
-        """Platform enabled
+        """Board supported
 
         NOTE: firmware is board-specific. Consult the README of
         acceleration_firmware_kv260 and/or change branch as per your
@@ -26,4 +26,4 @@ class PlatformSubverb(AccelerationSubverbExtensionPoint):
             within the `acceleration_firmware_kv260` package. Refer to it for more
             details.
         """
-        print(self.get_platform())
+        print(self.get_board())

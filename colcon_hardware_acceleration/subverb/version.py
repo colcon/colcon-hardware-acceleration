@@ -4,8 +4,8 @@
 import os
 
 from colcon_core.plugin_system import satisfies_version
-from colcon_acceleration.subverb import AccelerationSubverbExtensionPoint, get_vitis_dir
-from colcon_acceleration import __version__
+from colcon_hardware_acceleration.subverb import AccelerationSubverbExtensionPoint, get_vitis_dir
+from colcon_hardware_acceleration import __version__
 
 
 class VersionSubverb(AccelerationSubverbExtensionPoint):

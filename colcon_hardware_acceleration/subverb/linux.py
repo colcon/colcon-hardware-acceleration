@@ -7,7 +7,7 @@ import errno
 from pathlib import Path
 
 from colcon_core.plugin_system import satisfies_version
-from colcon_acceleration.subverb import (
+from colcon_hardware_acceleration.subverb import (
     AccelerationSubverbExtensionPoint,
     get_vitis_dir,
     get_rawimage_path,
@@ -20,7 +20,7 @@ from colcon_acceleration.subverb import (
     copy_ros2_workspace,
     copy_libstdcppfs,
 )
-from colcon_acceleration.verb import green, yellow, red, gray
+from colcon_hardware_acceleration.verb import green, yellow, red, gray
 
 
 ## No Xen, simple Linux kernel and rootfs-based

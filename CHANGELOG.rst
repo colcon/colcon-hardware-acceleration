@@ -1,5 +1,5 @@
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Changelog for package colcon_acceleration
+Changelog for package colcon-hardware-acceleration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 0.5.1 (2022-03-24)
@@ -25,7 +25,7 @@ Changelog for package colcon_acceleration
 ------------------
 * Improve CHANGELOG subitems in 0.1.0
 * Add spanish language support
-* Describe embedded capablities integrated in colcon-acceleration 0.2.0
+* Describe embedded capablities integrated in colcon-hardware-acceleration 0.2.0
 * Avoid hardcoding ROS 2 workspace destination
 * Create common ROS 2 script on-the-go
 

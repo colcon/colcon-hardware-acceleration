@@ -6,13 +6,13 @@
 import os
 
 from colcon_core.plugin_system import satisfies_version
-from colcon_acceleration.subverb import (
+from colcon_hardware_acceleration.subverb import (
     AccelerationSubverbExtensionPoint,
     run,
 )
-from colcon_acceleration import __version__
-from colcon_acceleration.verb import green, yellow, red
-from colcon_acceleration.subverb.list import get_firmware_options
+from colcon_hardware_acceleration import __version__
+from colcon_hardware_acceleration.verb import green, yellow, red
+from colcon_hardware_acceleration.subverb.list import get_firmware_options
 
 
 class SelectSubverb(AccelerationSubverbExtensionPoint):

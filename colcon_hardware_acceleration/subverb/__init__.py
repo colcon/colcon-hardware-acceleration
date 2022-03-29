@@ -8,7 +8,7 @@ import sys
 from colcon_core.logging import colcon_logger
 from colcon_core.plugin_system import instantiate_extensions
 from colcon_core.plugin_system import order_extensions_by_name
-from colcon_acceleration.verb import gray, yellow, red, green
+from colcon_hardware_acceleration.verb import gray, yellow, red, green
 
 logger = colcon_logger.getChild(__name__)
 
