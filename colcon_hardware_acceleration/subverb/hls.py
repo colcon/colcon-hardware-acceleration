@@ -36,7 +36,7 @@ class HLSSubverb(AccelerationSubverbExtensionPoint):
 
     NOTE: Default behavior of this subverb is to show the HLS "status"
 
-    Exposes Vitis HLS suite at the colcon ROS 2 meta build tools level. Provides:
+    Exposes Vitis HLS suite at the colcon meta build tools level for ROS 2 packages. Provides:
         0. Capability to show the HLS status of a given ROS 2 package
         1. Capability to launch Tcl scripts (pre-generated with ament macros, e.g. see vitis_hls_generate_tcl)
         2. Capability to bring up summarized versions of synthesis reports
@@ -93,7 +93,7 @@ class HLSSubverb(AccelerationSubverbExtensionPoint):
         if len(filter_data) < 1:
             red(
                 "No build* directories found.\n"
-                + "Make sure you're in the root of your ROS 2 workspace and the build "
+                + "Make sure you're in the root of your colcon workspace and the build "
                 + "dir starts with 'build'."
             )
             sys.exit(1)

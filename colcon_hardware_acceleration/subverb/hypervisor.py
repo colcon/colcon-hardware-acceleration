@@ -21,7 +21,7 @@ from colcon_hardware_acceleration.subverb import (
     replace_kernel,
     add_kernel,
     exists,
-    copy_ros2_workspace,
+    copy_colcon_workspace,
     copy_libstdcppfs
 )
 from colcon_hardware_acceleration.verb import green, yellow, red, gray
@@ -906,7 +906,7 @@ class HypervisorSubverb(AccelerationSubverbExtensionPoint):
 
             # copy ROS workspace to image
             if context.args.install_dir:
-                copy_ros2_workspace(context.args.install_dir)
+                copy_colcon_workspace(context.args.install_dir)
 
         else:
             red("No dom0 specified, doing nothing.")

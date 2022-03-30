@@ -110,7 +110,7 @@ def get_subverb_extensions():
 
 def get_workspace_path():
     """
-    Get the path to the current ROS 2 workspace
+    Get the path to the current colcon workspace
 
     :rtype: String
     """
@@ -121,13 +121,13 @@ def get_workspace_path():
         raise FileNotFoundError(
             current_dir,
             "consider running "
-            + "this command from the root directory of the ROS 2 workspace ",
+            + "this command from the root directory of the colcon workspace ",
         )
 
 
 def get_workspace_dir():
     """
-    Get the name to the current ROS 2 workspace
+    Get the name to the current colcon workspace
     :rtype: String
     """
     current_dir = get_workspace_path()
@@ -231,7 +231,7 @@ def get_build_dir():
             build_dir,
             "consider running "
             + "this command from the root directory of the workspace "
-            + "after building the ROS 2 workspace overlay. \n"
+            + "after building the colcon workspace overlay. \n"
             + "Try 'colcon build --merge-install' first.",
         )
 
@@ -287,7 +287,7 @@ def get_platform_dir():
 
 def get_install_dir(install_dir_input="install"):
     """
-    Get the path to the install directory of the current ROS 2 overlay worksapce
+    Get the path to the install directory of the current colcon overlay worksapce
 
     :rtype: String
     """
@@ -633,7 +633,7 @@ def exists(file_path):
         return False
 
 
-def copy_ros2_workspace(install_dir):  # noqa: D102
+def copy_colcon_workspace(install_dir):  # noqa: D102
     """
     Prepare the emulation
 
@@ -660,7 +660,7 @@ def copy_ros2_workspace(install_dir):  # noqa: D102
             + "the workspace first"
         )
         sys.exit(1)
-    green("- Verified that install/ is available in the current ROS 2 workspace")
+    green("- Verified that install/ is available in the current colcon workspace")
 
     #########################
     # 2. mounts the embedded raw image ("sd_card.img" file) available in deployed firmware
@@ -757,7 +757,7 @@ def copy_ros2_workspace(install_dir):  # noqa: D102
     green("- Image mounted successfully at: " + mountpoint)
 
     workspace_dir = get_workspace_dir()
-    # remove prior overlay ROS 2 workspace files at "/<workspace_dir>",
+    # remove prior overlay colcon workspace files at "/<workspace_dir>",
     #  and copy the <ws>/<install_dir> directory as such
     if os.path.exists(mountpoint + "/" + workspace_dir):
         cmd = "sudo rm -r " + mountpoint + "/" + workspace_dir + "/*"
@@ -770,7 +770,7 @@ def copy_ros2_workspace(install_dir):  # noqa: D102
             )
             sys.exit(1)
         green(
-            "- Successfully cleaned up prior overlay ROS 2 workspace "
+            "- Successfully cleaned up prior overlay colcon workspace "
             + "at: "
             + mountpoint
             + "/"
@@ -778,7 +778,7 @@ def copy_ros2_workspace(install_dir):  # noqa: D102
         )
     else:
         yellow(
-            "No prior overlay ROS 2 workspace found "
+            "No prior overlay colcon workspace found "
             + "at: "
             + mountpoint
             + "/"
@@ -789,7 +789,7 @@ def copy_ros2_workspace(install_dir):  # noqa: D102
         outs, errs = run(cmd, shell=True)
         if errs:
             red(
-                "Something went wrong while creating overlay ROS 2 workspace.\n"
+                "Something went wrong while creating overlay colcon workspace.\n"
                 + "Review the output: "
                 + errs
             )
@@ -799,7 +799,7 @@ def copy_ros2_workspace(install_dir):  # noqa: D102
     outs, errs = run(cmd, shell=True)
     if errs:
         red(
-            "Something went wrong while copying overlay ROS 2 workspace to mountpoint.\n"
+            "Something went wrong while copying overlay colcon workspace to mountpoint.\n"
             + "Review the output: "
             + errs
         )
@@ -807,7 +807,7 @@ def copy_ros2_workspace(install_dir):  # noqa: D102
     green(
         "- Copied '"
         + install_dir
-        + "' directory as a ROS 2 overlay workspace in the raw image "
+        + "' directory as a colcon overlay workspace in the raw image "
         + " at location "
         + "/"
         + workspace_dir
@@ -897,10 +897,10 @@ def create_ros2_overlay_script():  # noqa: D102
     content = """
 AMENT_SHELL=bash
 
-# source ROS 2 installation in Yocto-based rootfs
+# source colcon installation in Yocto-based rootfs
 source /usr/bin/ros_setup.bash
 
-# source ROS 2 overlay workspace
+# source colcon overlay workspace
 """
     content += "source /" + workspace_dir + "/local_setup.bash"
 
