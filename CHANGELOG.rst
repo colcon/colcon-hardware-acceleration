@@ -2,6 +2,16 @@
 Changelog for package colcon-hardware-acceleration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.7.0 (2022-04-05)
+------------------
+* Release 0.7.0
+* Change author and maintainer e-mails for notifications
+* Minor Terminology Fixes
+* Replace ROS with more generic terminology
+* 0.6.1
+* subverb:list: Correct returned error message
+
+
 0.6.0 (2022-03-29)
 ------------------
 * Release 0.6.0
