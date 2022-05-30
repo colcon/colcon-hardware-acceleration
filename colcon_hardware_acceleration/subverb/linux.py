@@ -19,6 +19,7 @@ from colcon_hardware_acceleration.subverb import (
     exists,
     copy_colcon_workspace,
     copy_libstdcppfs,
+    fix_yocto_honister
 )
 from colcon_hardware_acceleration.verb import green, yellow, red, gray
 
@@ -75,6 +76,14 @@ class LinuxSubverb(AccelerationSubverbExtensionPoint):
             dest="install_dir",
             type=str,
             help="relative path to the workspace directory to deploy in emulation (typically 'install-*').",
+        )
+
+        argument = parser.add_argument(
+            "--yocto-honister-fix",
+            dest="yocto_honister_fix",
+            action="store_true",
+            default=False,
+            help="Fixes ROS 2 Humble setup in Yocto (Honister release).",
         )
 
         # try:
@@ -500,3 +509,7 @@ class LinuxSubverb(AccelerationSubverbExtensionPoint):
         #####################
         # Add libstdc++fs.a
         copy_libstdcppfs()
+
+        if context.args.yocto_honister_fix:
+            green("- Applying fixes in ROS scripts for Yocto (Honister).")
+            fix_yocto_honister()
