@@ -902,7 +902,8 @@ source /usr/bin/ros_setup.bash
 
 # source colcon overlay workspace
 """
-    content += "source /" + workspace_dir + "/local_setup.bash"
+    content += "source /" + workspace_dir + "/local_setup.bash\n"
+    content += 'AMENT_PREFIX_PATH="/usr:$AMENT_PREFIX_PATH"\n'
 
     script = open(script_path, "w")
     script.truncate(0)  # delete previous content
