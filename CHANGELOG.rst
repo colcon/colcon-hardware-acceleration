@@ -2,6 +2,15 @@
 Changelog for package colcon-hardware-acceleration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.8.0 (2022-06-27)
+------------------
+* Release 0.8.0
+* Adjust AMENT_PREFIX_PATH for the security load entry point in Yocto
+* Fixes ROS 2 Humble setup in Yocto (Honister release)
+* Use extras_require[test] instead of tests_require
+* Suppress a deprecation warning in scspell
+* Bump required colcon-core version to 0.7.1
+
 0.7.0 (2022-04-05)
 ------------------
 * Release 0.7.0
