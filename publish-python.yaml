@@ -8,9 +8,7 @@ artifacts:
         config:
           repository: ros-acceleration/colcon-hardware-acceleration
           distributions:
-            - ubuntu:bionic
             - ubuntu:focal
             - ubuntu:jammy
-            - debian:stretch
-            - debian:buster
             - debian:bullseye
+            - debian:bookworm
