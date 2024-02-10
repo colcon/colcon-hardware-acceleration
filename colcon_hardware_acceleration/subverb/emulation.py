@@ -276,7 +276,7 @@ class EmulationSubverb(AccelerationSubverbExtensionPoint):
             cmd = (
                 "fdisk -l "
                 + rawimage_path
-                + " | grep 'Units\|Unidades' | awk '{print $8}'"
+                + " | grep 'Units\\|Unidades' | awk '{print $8}'"
             )
             outs, errs = run(cmd, shell=True)
             if outs:

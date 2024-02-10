@@ -408,7 +408,7 @@ def mount_rawimage(rawimage_path, partition=1, debug=False):
 
     # fetch UNITS
     units = None
-    cmd = "fdisk -l " + rawimage_path + " | grep 'Units\|Unidades' | awk '{print $8}'"
+    cmd = "fdisk -l " + rawimage_path + " | grep 'Units\\|Unidades' | awk '{print $8}'"
     outs, errs = run(cmd, shell=True)
     if outs:
         units = int(outs)
@@ -682,7 +682,7 @@ def copy_colcon_workspace(install_dir):  # noqa: D102
 
     # fetch UNITS
     units = None
-    cmd = "fdisk -l " + rawimage_path + " | grep 'Units\|Unidades' | awk '{print $8}'"
+    cmd = "fdisk -l " + rawimage_path + " | grep 'Units\\|Unidades' | awk '{print $8}'"
     outs, errs = run(cmd, shell=True)
     if outs:
         units = int(outs)
@@ -921,7 +921,7 @@ def fix_yocto_honister(partition=2):  # noqa: D102
     - /etc/profile.d/ros/setup.sh and
     - /usr/bin/ros_setup.bash
     """
-    content_etc_profile = """
+    content_etc_profile = r"""
 # generated from ament_package/template/prefix_level/setup.sh.in
 
 # since this file is sourced use either the provided AMENT_CURRENT_PREFIX
@@ -1068,7 +1068,7 @@ unset _UNIQUE_PREFIX_PATH
 unset AMENT_SHELL
 """
 
-    content_usr_bin = """
+    content_usr_bin = r"""
 # copied from ament_package/template/prefix_level/setup.bash
 
 AMENT_SHELL=bash
